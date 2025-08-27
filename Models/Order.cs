@@ -31,7 +31,7 @@ namespace ABCRetailers.Models
         [Required]
         [Display(Name = "Order Date")]
         [DataType(DataType.Date)]
-        public DateTime OrderDate { get; set; } = DateTime.Today;
+        public DateTime OrderDate { get; set; } = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc); // UTC fix
 
         [Required]
         [Display(Name = "Quantity")]

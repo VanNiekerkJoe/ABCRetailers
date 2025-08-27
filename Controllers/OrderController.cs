@@ -1,5 +1,4 @@
-﻿
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using ABCRetailers.Models;
 using ABCRetailers.Models.ViewModels;
 using ABCRetailers.Services;
@@ -60,14 +59,14 @@ namespace ABCRetailers.Controllers
                         return View(model);
                     }
 
-                    // Create order
+                    // Create order with UTC DateTime
                     var order = new Order
                     {
                         CustomerId = model.CustomerId,
                         Username = customer.Username,
                         ProductId = model.ProductId,
                         ProductName = product.ProductName,
-                        OrderDate = model.OrderDate,
+                        OrderDate = DateTime.SpecifyKind(model.OrderDate, DateTimeKind.Utc),  // UTC fix
                         Quantity = model.Quantity,
                         UnitPrice = product.Price,
                         TotalPrice = product.Price * model.Quantity,
@@ -156,6 +155,9 @@ namespace ABCRetailers.Controllers
             {
                 try
                 {
+                    // Set DateTime Kind to UTC before updating
+                    order.OrderDate = DateTime.SpecifyKind(order.OrderDate, DateTimeKind.Utc);
+
                     await _storageService.UpdateEntityAsync(order);
                     TempData["Success"] = "Order updated successfully!";
                     return RedirectToAction(nameof(Index));
