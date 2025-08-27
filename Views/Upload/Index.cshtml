@@ -1,41 +1,46 @@
-﻿@model IEnumerable<ABCRetailers.Models.FileUploadModel>
+﻿@model ABCRetailers.Models.FileUploadModel
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Upload Proof of Payment";
 }
 
-<h1>Index</h1>
+<div class="container mt-5 animate__animated animate__fadeInUp">
+    <div class="card shadow-lg border-0 rounded-3">
+        <div class="card-header bg-gradient-primary text-white rounded-top">
+            <h4 class="mb-0">Upload Proof of Payment</h4>
+        </div>
+        <div class="card-body p-4">
+            <form asp-action="Index" method="post" enctype="multipart/form-data">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.OrderId)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CustomerName)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.OrderId)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CustomerName)
-            </td>
-            <td>
-                @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
-                @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
-                @Html.ActionLink("Delete", "Delete", new { /* id=item.PrimaryKey */ })
-            </td>
-        </tr>
+                <div class="mb-3 position-relative">
+                    <label asp-for="OrderId" class="form-label fw-bold text-dark"></label>
+                    <input asp-for="OrderId" class="form-control border-0 border-bottom hover-underline" placeholder="Enter order ID" />
+                    <span asp-validation-for="OrderId" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3 position-relative">
+                    <label asp-for="CustomerName" class="form-label fw-bold text-dark"></label>
+                    <input asp-for="CustomerName" class="form-control border-0 border-bottom hover-underline" placeholder="Enter customer name" />
+                    <span asp-validation-for="CustomerName" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3 position-relative">
+                    <label asp-for="ProofOfPayment" class="form-label fw-bold text-dark"></label>
+                    <input asp-for="ProofOfPayment" type="file" class="form-control border-0 border-bottom hover-underline" accept=".pdf,.jpg,.png" />
+                    <span asp-validation-for="ProofOfPayment" class="text-danger"></span>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary transition-all animate__animated animate__pulse animate__infinite infinite">Upload File</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }
-    </tbody>
-</table>

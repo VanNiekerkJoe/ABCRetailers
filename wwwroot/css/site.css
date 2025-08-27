@@ -1,31 +1,74 @@
-html {
-  font-size: 14px;
-}
-
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
+/* Custom modern styles */
 body {
-  margin-bottom: 60px;
+    background-color: #ffffff; /* White background */
+    color: #000000; /* Black text */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+.bg-gradient-primary {
+    background: linear-gradient(180deg, #4e73df 10%, #224abe 100%);
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+.bg-gradient-success {
+    background: linear-gradient(180deg, #1cc88a 10%, #13855c 100%);
+}
+
+.bg-gradient-info {
+    background: linear-gradient(180deg, #36b9cc 10%, #258391 100%);
+}
+
+.bg-light-grey {
+    background-color: #f8f9fa; /* Light grey for dashboard cards */
+}
+
+.text-black {
+    color: #000000 !important;
+}
+
+.text-dark {
+    color: #212529 !important; /* Dark text for readability */
+}
+
+.transition-all {
+    transition: all 0.3s ease;
+}
+
+.card:hover, .btn:hover, tr:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important; /* Light shadow on hover */
+}
+
+.hover-underline:hover {
+    text-decoration: underline;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Light shadow like underline on hover */
+}
+
+.hover-underline-tr:hover td {
+    text-decoration: underline;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.hover-underline-card:hover {
+    text-decoration: underline;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.table th, .table td {
+    vertical-align: middle;
+    color: #000000; /* Black text in tables */
+}
+
+.badge {
+    padding: 0.5em 1em;
+    color: #ffffff;
+}
+
+.nav-link:hover {
+    text-decoration: underline;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Hover effect on nav links */
+}
+
+/* More lively animations */
+.animate__pulse {
+    animation-duration: 2s; /* Slower pulse for subtle liveliness */
 }
