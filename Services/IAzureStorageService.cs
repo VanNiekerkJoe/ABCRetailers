@@ -1,8 +1,4 @@
-﻿using Azure;
-using Azure.Data.Tables;
-using Azure.Storage.Blobs;
-using Azure.Storage.Files.Shares;
-using Azure.Storage.Queues;
+﻿using Azure.Data.Tables;
 using Microsoft.AspNetCore.Http;
 
 namespace ABCRetailers.Services
@@ -27,6 +23,6 @@ namespace ABCRetailers.Services
 
         // File Share operations
         Task<string> UploadToFileShareAsync(IFormFile file, string shareName, string directoryName = "");
-        Task<Stream> DownloadFromFileShareAsync(string shareName, string fileName, string directoryName = "");
+        Task<System.IO.Stream> DownloadFromFileShareAsync(string shareName, string fileName, string directoryName = "");
     }
 }
