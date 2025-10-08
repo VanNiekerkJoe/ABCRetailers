@@ -19,8 +19,9 @@ namespace ABCRetailers.Controllers.Api
             _logger = logger;
         }
 
+        // GET: api/products/{id}
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetProduct(string id)
+        public async Task<ActionResult<Product>> GetProduct(string id)
         {
             try
             {
@@ -29,7 +30,7 @@ namespace ABCRetailers.Controllers.Api
                 {
                     return NotFound($"Product with ID {id} not found");
                 }
-                return Ok(product);
+                return product;
             }
             catch (Exception ex)
             {
@@ -38,13 +39,14 @@ namespace ABCRetailers.Controllers.Api
             }
         }
 
+        // GET: api/products
         [HttpGet]
-        public async Task<IActionResult> ListProducts()
+        public async Task<ActionResult<List<Product>>> ListProducts()
         {
             try
             {
                 var products = await _storageService.GetAllEntitiesAsync<Product>();
-                return Ok(products);
+                return products;
             }
             catch (Exception ex)
             {
@@ -53,8 +55,9 @@ namespace ABCRetailers.Controllers.Api
             }
         }
 
+        // PUT: api/products/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(string id, Product product)
+        public async Task<ActionResult<Product>> UpdateProduct(string id, Product product)
         {
             try
             {
@@ -70,7 +73,7 @@ namespace ABCRetailers.Controllers.Api
                 }
 
                 await _storageService.UpdateEntityAsync(product);
-                return Ok(product);
+                return product;
             }
             catch (Exception ex)
             {

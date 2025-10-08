@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using ABCRetailers.Models;
+﻿using ABCRetailers.Models;
 using ABCRetailers.Services;
-using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace ABCRetailers.Controllers
 {
@@ -64,9 +65,37 @@ namespace ABCRetailers.Controllers
                     {
                         var imageUrl = await _storageService.UploadImageAsync(imageFile, "product-images");
                         product.ImageUrl = imageUrl;
+
+                        // === QUEUE INTEGRATION: Send image processing message to queue ===
+                        var imageMessage = new
+                        {
+                            ProductId = product.RowKey,
+                            ProductName = product.ProductName,
+                            ImageUrl = imageUrl,
+                            Action = "CREATE",
+                            ProcessTime = DateTime.UtcNow,
+                            FileName = imageFile.FileName,
+                            FileSize = imageFile.Length
+                        };
+                        await _storageService.SendMessageAsync("image-processing", JsonSerializer.Serialize(imageMessage));
+                        _logger.LogInformation("Image processing message sent to queue for Product: {ProductName}", product.ProductName);
                     }
 
                     await _storageService.AddEntityAsync(product);
+
+                    // === QUEUE INTEGRATION: Send product creation notification ===
+                    var productMessage = new
+                    {
+                        ProductId = product.RowKey,
+                        ProductName = product.ProductName,
+                        Price = product.Price,
+                        Stock = product.StockAvailable,
+                        Action = "CREATE",
+                        CreatedTime = DateTime.UtcNow
+                    };
+                    await _storageService.SendMessageAsync("product-updates", JsonSerializer.Serialize(productMessage));
+                    _logger.LogInformation("Product creation notification sent to queue for: {ProductName}", product.ProductName);
+
                     TempData["Success"] = $"Product '{product.ProductName}' created successfully with price {product.Price:C}!";
                     return RedirectToAction(nameof(Index));
                 }
@@ -119,6 +148,10 @@ namespace ABCRetailers.Controllers
                         return NotFound();
                     }
 
+                    // Track if stock changed for queue message
+                    var stockChanged = originalProduct.StockAvailable != product.StockAvailable;
+                    var previousStock = originalProduct.StockAvailable;
+
                     // Update properties but keep the original ETag
                     originalProduct.ProductName = product.ProductName;
                     originalProduct.Description = product.Description;
@@ -130,9 +163,39 @@ namespace ABCRetailers.Controllers
                     {
                         var imageUrl = await _storageService.UploadImageAsync(imageFile, "product-images");
                         originalProduct.ImageUrl = imageUrl;
+
+                        // === QUEUE INTEGRATION: Send image update message to queue ===
+                        var imageMessage = new
+                        {
+                            ProductId = product.RowKey,
+                            ProductName = product.ProductName,
+                            ImageUrl = imageUrl,
+                            Action = "UPDATE",
+                            ProcessTime = DateTime.UtcNow,
+                            FileName = imageFile.FileName,
+                            FileSize = imageFile.Length
+                        };
+                        await _storageService.SendMessageAsync("image-processing", JsonSerializer.Serialize(imageMessage));
+                        _logger.LogInformation("Image update message sent to queue for Product: {ProductName}", product.ProductName);
                     }
 
                     await _storageService.UpdateEntityAsync(originalProduct);
+
+                    // === QUEUE INTEGRATION: Send product update notification ===
+                    var productMessage = new
+                    {
+                        ProductId = product.RowKey,
+                        ProductName = product.ProductName,
+                        Price = product.Price,
+                        PreviousStock = previousStock,
+                        NewStock = product.StockAvailable,
+                        StockChanged = stockChanged,
+                        Action = "UPDATE",
+                        UpdatedTime = DateTime.UtcNow
+                    };
+                    await _storageService.SendMessageAsync("product-updates", JsonSerializer.Serialize(productMessage));
+                    _logger.LogInformation("Product update notification sent to queue for: {ProductName}", product.ProductName);
+
                     TempData["Success"] = "Product updated successfully!";
                     return RedirectToAction(nameof(Index));
                 }
@@ -150,12 +213,28 @@ namespace ABCRetailers.Controllers
         {
             try
             {
+                var product = await _storageService.GetEntityAsync<Product>("Product", id);
+                if (product != null)
+                {
+                    // === QUEUE INTEGRATION: Send product deletion notification ===
+                    var deleteMessage = new
+                    {
+                        ProductId = product.ProductId,
+                        ProductName = product.ProductName,
+                        Action = "DELETE",
+                        DeletedTime = DateTime.UtcNow
+                    };
+                    await _storageService.SendMessageAsync("product-updates", JsonSerializer.Serialize(deleteMessage));
+                    _logger.LogInformation("Product deletion notification sent to queue for: {ProductName}", product.ProductName);
+                }
+
                 await _storageService.DeleteEntityAsync<Product>("Product", id);
                 TempData["Success"] = "Product deleted successfully!";
             }
             catch (Exception ex)
             {
                 TempData["Error"] = $"Error deleting product: {ex.Message}";
+                _logger.LogError(ex, "Error deleting product {ProductId}", id);
             }
             return RedirectToAction(nameof(Index));
         }

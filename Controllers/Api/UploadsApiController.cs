@@ -19,8 +19,9 @@ namespace ABCRetailers.Controllers.Api
             _logger = logger;
         }
 
+        // POST: api/uploads/proof-of-payment
         [HttpPost("proof-of-payment")]
-        public async Task<IActionResult> UploadProofOfPayment(IFormFile file, string orderId, string customerName)
+        public async Task<ActionResult<object>> UploadProofOfPayment(IFormFile file, string orderId, string customerName)
         {
             try
             {
@@ -35,12 +36,12 @@ namespace ABCRetailers.Controllers.Api
                 // Write to Azure Files
                 var fileShareName = await _storageService.UploadToFileShareAsync(file, "contracts", "payments");
 
-                return Ok(new
+                return new
                 {
                     Message = "Proof of payment uploaded successfully",
                     BlobFileName = blobFileName,
                     FileShareName = fileShareName
-                });
+                };
             }
             catch (Exception ex)
             {

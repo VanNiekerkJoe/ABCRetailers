@@ -58,8 +58,8 @@ namespace ABCRetailers.Services
 
                 if (orderMessage != null)
                 {
-                    _logger.LogInformation("Processing order: {OrderId}, Status: {Status}",
-                        orderMessage.OrderId, orderMessage.Status);
+                    _logger.LogInformation("Processing order: {OrderId}, Status: {Status}, Customer: {CustomerName}",
+                        orderMessage.OrderId, orderMessage.Status, orderMessage.CustomerName);
 
                     // Process based on order status
                     switch (orderMessage.Status)
@@ -77,6 +77,17 @@ namespace ABCRetailers.Services
                             await ProcessCancelledOrder(orderMessage);
                             break;
                     }
+
+                    // Log to Azure Tables for audit trail
+                    await _storageService.AddEntityAsync(new OrderProcessLog
+                    {
+                        PartitionKey = "OrderProcess",
+                        RowKey = Guid.NewGuid().ToString(),
+                        OrderId = orderMessage.OrderId,
+                        ProcessTime = DateTime.UtcNow,
+                        Action = $"Processed {orderMessage.Status}",
+                        Message = $"Order {orderMessage.OrderId} for {orderMessage.CustomerName}"
+                    });
                 }
             }
             catch (Exception ex)
@@ -88,25 +99,45 @@ namespace ABCRetailers.Services
         private async Task ProcessSubmittedOrder(OrderNotificationMessage order)
         {
             _logger.LogInformation("Order {OrderId} submitted by {CustomerName}", order.OrderId, order.CustomerName);
-            await Task.Delay(1000);
+
+            // Here you can add business logic like:
+            // - Send confirmation email
+            // - Update CRM system
+            // - Validate payment
+            await Task.Delay(100); // Simulate work
         }
 
         private async Task ProcessProcessingOrder(OrderNotificationMessage order)
         {
             _logger.LogInformation("Order {OrderId} is now processing", order.OrderId);
-            await Task.Delay(1000);
+
+            // Business logic for processing:
+            // - Update inventory systems
+            // - Prepare shipment
+            // - Notify warehouse
+            await Task.Delay(100);
         }
 
         private async Task ProcessCompletedOrder(OrderNotificationMessage order)
         {
             _logger.LogInformation("Order {OrderId} completed successfully", order.OrderId);
-            await Task.Delay(1000);
+
+            // Business logic for completion:
+            // - Send delivery confirmation
+            // - Update analytics
+            // - Request customer review
+            await Task.Delay(100);
         }
 
         private async Task ProcessCancelledOrder(OrderNotificationMessage order)
         {
             _logger.LogInformation("Order {OrderId} was cancelled", order.OrderId);
-            await Task.Delay(1000);
+
+            // Business logic for cancellation:
+            // - Process refunds
+            // - Restock inventory
+            // - Notify customer service
+            await Task.Delay(100);
         }
     }
 
@@ -120,5 +151,17 @@ namespace ABCRetailers.Services
         public decimal TotalPrice { get; set; }
         public DateTime OrderDate { get; set; }
         public string Status { get; set; } = string.Empty;
+    }
+
+    public class OrderProcessLog : Azure.Data.Tables.ITableEntity
+    {
+        public string PartitionKey { get; set; } = string.Empty;
+        public string RowKey { get; set; } = string.Empty;
+        public DateTimeOffset? Timestamp { get; set; }
+        public Azure.ETag ETag { get; set; }
+        public string OrderId { get; set; } = string.Empty;
+        public DateTime ProcessTime { get; set; }
+        public string Action { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
     }
 }

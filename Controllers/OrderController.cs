@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using ABCRetailers.Models;
+﻿using ABCRetailers.Models;
 using ABCRetailers.Models.ViewModels;
 using ABCRetailers.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace ABCRetailers.Controllers
@@ -9,10 +10,12 @@ namespace ABCRetailers.Controllers
     public class OrderController : Controller
     {
         private readonly IAzureStorageService _storageService;
+        private readonly ILogger<OrderController> _logger;
 
-        public OrderController(IAzureStorageService storageService)
+        public OrderController(IAzureStorageService storageService, ILogger<OrderController> logger)
         {
             _storageService = storageService;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index()
@@ -66,11 +69,11 @@ namespace ABCRetailers.Controllers
                         Username = customer.Username,
                         ProductId = model.ProductId,
                         ProductName = product.ProductName,
-                        OrderDate = DateTime.SpecifyKind(model.OrderDate, DateTimeKind.Utc),  // UTC fix
+                        OrderDate = DateTime.SpecifyKind(model.OrderDate, DateTimeKind.Utc),
                         Quantity = model.Quantity,
                         UnitPrice = product.Price,
                         TotalPrice = product.Price * model.Quantity,
-                        Status = "Submitted" // Always starts as Submitted
+                        Status = "Submitted"
                     };
 
                     await _storageService.AddEntityAsync(order);
@@ -79,7 +82,7 @@ namespace ABCRetailers.Controllers
                     product.StockAvailable -= model.Quantity;
                     await _storageService.UpdateEntityAsync(product);
 
-                    // Send queue message for new order
+                    // === QUEUE INTEGRATION: Send order notification to queue ===
                     var orderMessage = new
                     {
                         OrderId = order.OrderId,
@@ -92,8 +95,9 @@ namespace ABCRetailers.Controllers
                         Status = order.Status
                     };
                     await _storageService.SendMessageAsync("order-notifications", JsonSerializer.Serialize(orderMessage));
+                    _logger.LogInformation("Order notification sent to queue for Order ID: {OrderId}", order.OrderId);
 
-                    // Send stock update message
+                    // === QUEUE INTEGRATION: Send stock update to queue ===
                     var stockMessage = new
                     {
                         ProductId = product.ProductId,
@@ -104,6 +108,7 @@ namespace ABCRetailers.Controllers
                         UpdateDate = DateTime.UtcNow
                     };
                     await _storageService.SendMessageAsync("stock-updates", JsonSerializer.Serialize(stockMessage));
+                    _logger.LogInformation("Stock update sent to queue for Product: {ProductName}", product.ProductName);
 
                     TempData["Success"] = "Order created successfully!";
                     return RedirectToAction(nameof(Index));
@@ -111,6 +116,7 @@ namespace ABCRetailers.Controllers
                 catch (Exception ex)
                 {
                     ModelState.AddModelError("", $"Error creating order: {ex.Message}");
+                    _logger.LogError(ex, "Error creating order");
                 }
             }
             await PopulateDropdowns(model);
@@ -155,16 +161,40 @@ namespace ABCRetailers.Controllers
             {
                 try
                 {
+                    // Get the original order to track status changes
+                    var originalOrder = await _storageService.GetEntityAsync<Order>("Order", order.RowKey);
+                    var previousStatus = originalOrder?.Status;
+
                     // Set DateTime Kind to UTC before updating
                     order.OrderDate = DateTime.SpecifyKind(order.OrderDate, DateTimeKind.Utc);
 
                     await _storageService.UpdateEntityAsync(order);
+
+                    // === QUEUE INTEGRATION: Send status update to queue if status changed ===
+                    if (originalOrder != null && originalOrder.Status != order.Status)
+                    {
+                        var statusMessage = new
+                        {
+                            OrderId = order.OrderId,
+                            CustomerId = order.CustomerId,
+                            CustomerName = order.Username,
+                            PreviousStatus = previousStatus,
+                            NewStatus = order.Status,
+                            UpdatedDate = DateTime.UtcNow,
+                            UpdatedBy = "System"
+                        };
+                        await _storageService.SendMessageAsync("order-notifications", JsonSerializer.Serialize(statusMessage));
+                        _logger.LogInformation("Order status update sent to queue: {OrderId} from {PreviousStatus} to {NewStatus}",
+                            order.OrderId, previousStatus, order.Status);
+                    }
+
                     TempData["Success"] = "Order updated successfully!";
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
                 {
                     ModelState.AddModelError("", $"Error updating order: {ex.Message}");
+                    _logger.LogError(ex, "Error updating order {OrderId}", order.OrderId);
                 }
             }
             return View(order);
@@ -175,12 +205,29 @@ namespace ABCRetailers.Controllers
         {
             try
             {
+                var order = await _storageService.GetEntityAsync<Order>("Order", id);
+                if (order != null)
+                {
+                    // === QUEUE INTEGRATION: Send cancellation notification to queue ===
+                    var cancelMessage = new
+                    {
+                        OrderId = order.OrderId,
+                        CustomerId = order.CustomerId,
+                        CustomerName = order.Username,
+                        Action = "DELETE",
+                        DeleteTime = DateTime.UtcNow
+                    };
+                    await _storageService.SendMessageAsync("order-notifications", JsonSerializer.Serialize(cancelMessage));
+                    _logger.LogInformation("Order deletion notification sent to queue for Order ID: {OrderId}", order.OrderId);
+                }
+
                 await _storageService.DeleteEntityAsync<Order>("Order", id);
                 TempData["Success"] = "Order deleted successfully!";
             }
             catch (Exception ex)
             {
                 TempData["Error"] = $"Error deleting order: {ex.Message}";
+                _logger.LogError(ex, "Error deleting order {OrderId}", id);
             }
             return RedirectToAction(nameof(Index));
         }
@@ -203,8 +250,9 @@ namespace ABCRetailers.Controllers
                 }
                 return Json(new { success = false });
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting product price for {ProductId}", productId);
                 return Json(new { success = false });
             }
         }
@@ -224,7 +272,7 @@ namespace ABCRetailers.Controllers
                 order.Status = newStatus;
                 await _storageService.UpdateEntityAsync(order);
 
-                // Send queue message for status update
+                // === QUEUE INTEGRATION: Send status update to queue ===
                 var statusMessage = new
                 {
                     OrderId = order.OrderId,
@@ -236,11 +284,13 @@ namespace ABCRetailers.Controllers
                     UpdatedBy = "System"
                 };
                 await _storageService.SendMessageAsync("order-notifications", JsonSerializer.Serialize(statusMessage));
+                _logger.LogInformation("Order status update sent to queue via AJAX: {OrderId} to {NewStatus}", order.OrderId, newStatus);
 
                 return Json(new { success = true, message = $"Order status updated to {newStatus}" });
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error updating order status for {OrderId}", id);
                 return Json(new { success = false, message = ex.Message });
             }
         }

@@ -15,6 +15,7 @@ builder.Services.AddScoped<IAzureStorageService, AzureStorageService>();
 // Register Background Services
 builder.Services.AddHostedService<OrderQueueBackgroundService>();
 builder.Services.AddHostedService<StockQueueBackgroundService>();
+builder.Services.AddHostedService<ImageProcessingBackgroundService>();
 
 var app = builder.Build();
 

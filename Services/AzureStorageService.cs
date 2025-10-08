@@ -1,12 +1,12 @@
-﻿using Azure;
+﻿using ABCRetailers.Models;
+using Azure;
 using Azure.Data.Tables;
 using Azure.Storage.Blobs;
-using Azure.Storage.Queues;
 using Azure.Storage.Files.Shares;
-using ABCRetailers.Models;
+using Azure.Storage.Queues;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Http;
 
 namespace ABCRetailers.Services
 {
@@ -16,20 +16,23 @@ namespace ABCRetailers.Services
         private readonly BlobServiceClient _blobServiceClient;
         private readonly QueueServiceClient _queueServiceClient;
         private readonly ShareServiceClient _shareServiceClient;
+        private readonly IConfiguration _configuration;
         private readonly ILogger<AzureStorageService> _logger;
 
         public AzureStorageService(
             IConfiguration configuration,
             ILogger<AzureStorageService> logger)
         {
+            _configuration = configuration;
+            _logger = logger;
+
             string connectionString = configuration.GetConnectionString("AzureStorage")
-                ?? throw new InvalidOperationException("Azure Storage connection string not found");
+                ?? "UseDevelopmentStorage=true"; // Fallback for Azurite
 
             _tableServiceClient = new TableServiceClient(connectionString);
             _blobServiceClient = new BlobServiceClient(connectionString);
             _queueServiceClient = new QueueServiceClient(connectionString);
             _shareServiceClient = new ShareServiceClient(connectionString);
-            _logger = logger;
 
             InitializeStorageAsync().Wait();
         }
@@ -40,13 +43,13 @@ namespace ABCRetailers.Services
             {
                 _logger.LogInformation("Starting Azure Storage initialization...");
 
-                // create tables
+                // Create tables
                 await _tableServiceClient.CreateTableIfNotExistsAsync("Customers");
                 await _tableServiceClient.CreateTableIfNotExistsAsync("Products");
                 await _tableServiceClient.CreateTableIfNotExistsAsync("Orders");
                 _logger.LogInformation("Tables created successfully");
 
-                // create blob containers with retry logic
+                // Create blob containers
                 var productImagesContainer = _blobServiceClient.GetBlobContainerClient("product-images");
                 await productImagesContainer.CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
 
@@ -54,19 +57,21 @@ namespace ABCRetailers.Services
                 await paymentProofsContainer.CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.None);
                 _logger.LogInformation("Blob containers created successfully");
 
-                // create queues
+                // Create queues
                 var orderQueue = _queueServiceClient.GetQueueClient("order-notifications");
                 await orderQueue.CreateIfNotExistsAsync();
 
                 var stockQueue = _queueServiceClient.GetQueueClient("stock-updates");
                 await stockQueue.CreateIfNotExistsAsync();
+
+                var imageQueue = _queueServiceClient.GetQueueClient("image-processing");
+                await imageQueue.CreateIfNotExistsAsync();
                 _logger.LogInformation("Queues created successfully");
 
-                // create file share
+                // Create file share
                 var contractsShare = _shareServiceClient.GetShareClient("contracts");
                 await contractsShare.CreateIfNotExistsAsync();
 
-                // create payments directory in contracts share
                 var contractsDirectory = contractsShare.GetDirectoryClient("payments");
                 await contractsDirectory.CreateIfNotExistsAsync();
                 _logger.LogInformation("File shares created successfully");
@@ -127,13 +132,11 @@ namespace ABCRetailers.Services
 
             try
             {
-                // Use ETag for optimistic concurrency
                 await tableClient.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Replace);
                 return entity;
             }
             catch (RequestFailedException ex) when (ex.Status == 412)
             {
-                // Precondition failed - entity was modified by another process
                 _logger.LogWarning("Entity update failed due to ETag mismatch for {EntityType} with RowKey {RowKey}",
                     typeof(T).Name, entity.RowKey);
                 throw new InvalidOperationException("The entity was modified by another process. Please refresh and try again.");
@@ -160,8 +163,6 @@ namespace ABCRetailers.Services
             try
             {
                 var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
-
-                // Ensure container exists
                 await containerClient.CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
 
                 var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
@@ -184,7 +185,6 @@ namespace ABCRetailers.Services
             try
             {
                 var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
-                // Ensure container exists
                 await containerClient.CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.None);
 
                 var fileName = $"{DateTime.Now:yyyyMMdd_HHmmss}_{file.FileName}";
@@ -213,12 +213,15 @@ namespace ABCRetailers.Services
         public async Task SendMessageAsync(string queueName, string message)
         {
             var queueClient = _queueServiceClient.GetQueueClient(queueName);
+            await queueClient.CreateIfNotExistsAsync();
             await queueClient.SendMessageAsync(message);
         }
 
         public async Task<string?> ReceiveMessageAsync(string queueName)
         {
             var queueClient = _queueServiceClient.GetQueueClient(queueName);
+            await queueClient.CreateIfNotExistsAsync();
+
             var response = await queueClient.ReceiveMessageAsync();
 
             if (response.Value != null)
