@@ -1,55 +1,41 @@
 ﻿@model IEnumerable<ABCRetailers.Models.Order>
 
-@{
-    ViewData["Title"] = "Orders";
-}
+<h2>Orders (Admin View)</h2>
 
-<div class="container mt-5 animate__animated animate__fadeInUp">
-    <div class="card shadow-lg border-0 rounded-3 overflow-hidden">
-        <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">Order List</h4>
-            <a asp-action="Create" class="btn btn-light btn-sm transition-all animate__animated animate__pulse animate__infinite infinite">Add New Order</a>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-striped mb-0">
-                    <thead class="bg-dark text-white">
-                        <tr>
-                            <th>@Html.DisplayNameFor(model => model.OrderId)</th>
-                            <th>@Html.DisplayNameFor(model => model.Username)</th>
-                            <th>@Html.DisplayNameFor(model => model.ProductName)</th>
-                            <th>@Html.DisplayNameFor(model => model.OrderDate)</th>
-                            <th>@Html.DisplayNameFor(model => model.Quantity)</th>
-                            <th>@Html.DisplayNameFor(model => model.TotalPrice)</th>
-                            <th>@Html.DisplayNameFor(model => model.Status)</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model)
-                        {
-                            <tr class="transition-all hover-underline-tr">
-                                <td>@Html.DisplayFor(modelItem => item.OrderId)</td>
-                                <td>@Html.DisplayFor(modelItem => item.Username)</td>
-                                <td>@Html.DisplayFor(modelItem => item.ProductName)</td>
-                                <td>@Html.DisplayFor(modelItem => item.OrderDate)</td>
-                                <td>@Html.DisplayFor(modelItem => item.Quantity)</td>
-                                <td>@Html.DisplayFor(modelItem => item.TotalPrice)</td>
-                                <td>
-                                    <span class="badge bg-@(item.Status == "Completed" ? "success" : item.Status == "Cancelled" ? "danger" : item.Status == "Processing" ? "warning" : "primary") rounded-pill">@item.Status</span>
-                                </td>
-                                <td>
-                                    <a asp-action="Details" asp-route-id="@item.RowKey" class="btn btn-sm btn-info transition-all animate__animated animate__pulse animate__infinite infinite">Details</a>
-                                    <a asp-action="Edit" asp-route-id="@item.RowKey" class="btn btn-sm btn-primary transition-all animate__animated animate__pulse animate__infinite infinite">Edit</a>
-                                    <form asp-action="Delete" asp-route-id="@item.RowKey" method="post" class="d-inline">
-                                        <button type="submit" class="btn btn-sm btn-danger transition-all animate__animated animate__pulse animate__infinite infinite" onclick="return confirm('Are you sure you want to delete this order?');">Delete</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Product</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var order in Model)
+        {
+            <tr>
+                <td>@order.Id</td>
+                <td>@order.CustomerId</td>
+                <td>@order.ProductId</td>
+                <td>@order.OrderDate.ToShortDateString()</td>
+                <td><strong>@order.Status</strong></td>
+                <td>
+                    @if (order.Status == "Placed")
+                    {
+                        <form asp-action="Process" method="post">
+                            <input type="hidden" name="id" value="@order.Id" />
+                            <button type="submit" class="btn btn-success">Process Order</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <span class="text-success">Processed</span>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
