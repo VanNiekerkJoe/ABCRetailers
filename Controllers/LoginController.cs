@@ -8,11 +8,13 @@ namespace ABCRetailers.Controllers
     {
         private readonly AuthDbContext _db;
         private readonly ILogger<LoginController> _logger;
+        private readonly IConfiguration _configuration;
 
-        public LoginController(AuthDbContext db, ILogger<LoginController> logger)
+        public LoginController(AuthDbContext db, ILogger<LoginController> logger, IConfiguration configuration)
         {
             _db = db;
             _logger = logger;
+            _configuration = configuration;
         }
 
         public IActionResult Index()
@@ -20,12 +22,20 @@ namespace ABCRetailers.Controllers
             try
             {
                 HttpContext.Session.Clear();
+
+                // Test database connection on login page load
+                var connectionString = _configuration.GetConnectionString("DefaultConnection");
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    ViewBag.DatabaseError = "Database configuration is missing.";
+                }
+
                 return View();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in Login Index");
-                TempData["ErrorMessage"] = "System error. Please try again.";
+                ViewBag.DatabaseError = "System configuration error. Please contact administrator.";
                 return View();
             }
         }
@@ -36,6 +46,23 @@ namespace ABCRetailers.Controllers
             try
             {
                 _logger.LogInformation("Login attempt for user: {Username}", username);
+
+                // Validate database connection first
+                try
+                {
+                    var canConnect = await _db.Database.CanConnectAsync();
+                    if (!canConnect)
+                    {
+                        TempData["ErrorMessage"] = "Database connection failed. Please try again later.";
+                        return View();
+                    }
+                }
+                catch (Exception dbEx)
+                {
+                    _logger.LogError(dbEx, "Database connection error during login");
+                    TempData["ErrorMessage"] = "System temporarily unavailable. Please try again later.";
+                    return View();
+                }
 
                 if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
                 {
@@ -103,44 +130,6 @@ namespace ABCRetailers.Controllers
             }
         }
 
-        public IActionResult Logout()
-        {
-            try
-            {
-                var username = HttpContext.Session.GetString("Username");
-                var role = HttpContext.Session.GetString("Role");
-
-                _logger.LogInformation("User {Username} (Role: {Role}) initiated logout", username, role);
-                return View();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in Logout view");
-                TempData["ErrorMessage"] = "Error during logout. Please try again.";
-                return RedirectToAction("Index");
-            }
-        }
-
-        [HttpPost]
-        public IActionResult PerformLogout()
-        {
-            try
-            {
-                var username = HttpContext.Session.GetString("Username");
-                var role = HttpContext.Session.GetString("Role");
-
-                HttpContext.Session.Clear();
-                _logger.LogInformation("User {Username} (Role: {Role}) logged out successfully", username, role);
-
-                TempData["SuccessMessage"] = "You have been successfully logged out.";
-                return RedirectToAction("Index");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during logout processing");
-                TempData["ErrorMessage"] = "Error during logout. Please try again.";
-                return RedirectToAction("Index");
-            }
-        }
+        // ... rest of your LoginController methods ...
     }
 }
