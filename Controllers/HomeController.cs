@@ -23,7 +23,7 @@ namespace ABCRetailers.Controllers
 
             var role = HttpContext.Session.GetString("Role");
 
-            // Calculate REAL stats for dashboard from database
+ //love you mom and jesus and dad / sis
             if (role == "Admin")
             {
                 ViewBag.TotalProducts = await _db.Products.CountAsync(p => p.IsActive && p.IsPublished); // FIXED: Added IsPublished
