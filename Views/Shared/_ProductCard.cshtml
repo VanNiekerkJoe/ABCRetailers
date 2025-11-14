@@ -1,0 +1,175 @@
+﻿@model ABCRetailers.Models.Product
+
+@{
+    ViewData["Title"] = "Create Product";
+}
+
+<div class="container mt-5 animate__animated animate__fadeInUp">
+    <div class="card shadow-lg border-0 rounded-3">
+        <div class="card-header bg-gradient-primary text-white rounded-top">
+            <h4 class="mb-0">Create New Product</h4>
+        </div>
+        <div class="card-body p-4">
+            <form asp-action="Create" method="post" enctype="multipart/form-data">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <!-- SKU Field -->
+                <div class="mb-3 position-relative">
+                    <label asp-for="SKU" class="form-label fw-bold text-dark"></label>
+                    <input asp-for="SKU" class="form-control border-0 border-bottom hover-underline" placeholder="Enter product SKU" />
+                    <span asp-validation-for="SKU" class="text-danger"></span>
+                </div>
+
+                <!-- Name Field (was ProductName) -->
+                <div class="mb-3 position-relative">
+                    <label asp-for="Name" class="form-label fw-bold text-dark"></label>
+                    <input asp-for="Name" class="form-control border-0 border-bottom hover-underline" placeholder="Enter product name" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+
+                <!-- Description Field -->
+                <div class="mb-3 position-relative">
+                    <label asp-for="Description" class="form-label fw-bold text-dark"></label>
+                    <textarea asp-for="Description" class="form-control border-0 border-bottom hover-underline" rows="3" placeholder="Enter product description"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <!-- Short Description Field -->
+                <div class="mb-3 position-relative">
+                    <label asp-for="ShortDescription" class="form-label fw-bold text-dark"></label>
+                    <textarea asp-for="ShortDescription" class="form-control border-0 border-bottom hover-underline" rows="2" placeholder="Enter short description"></textarea>
+                    <span asp-validation-for="ShortDescription" class="text-danger"></span>
+                </div>
+
+                <!-- Price Fields -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3 position-relative">
+                            <label asp-for="Price" class="form-label fw-bold text-dark"></label>
+                            <input asp-for="Price" class="form-control border-0 border-bottom hover-underline" type="number" step="0.01" placeholder="Enter price" />
+                            <span asp-validation-for="Price" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3 position-relative">
+                            <label asp-for="ComparePrice" class="form-label fw-bold text-dark"></label>
+                            <input asp-for="ComparePrice" class="form-control border-0 border-bottom hover-underline" type="number" step="0.01" placeholder="Enter compare price (optional)" />
+                            <span asp-validation-for="ComparePrice" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stock Fields -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3 position-relative">
+                            <label asp-for="StockQuantity" class="form-label fw-bold text-dark"></label>
+                            <input asp-for="StockQuantity" class="form-control border-0 border-bottom hover-underline" type="number" placeholder="Enter stock quantity" />
+                            <span asp-validation-for="StockQuantity" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3 position-relative">
+                            <label asp-for="LowStockThreshold" class="form-label fw-bold text-dark"></label>
+                            <input asp-for="LowStockThreshold" class="form-control border-0 border-bottom hover-underline" type="number" value="5" />
+                            <span asp-validation-for="LowStockThreshold" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category and Brand -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3 position-relative">
+                            <label asp-for="CategoryId" class="form-label fw-bold text-dark"></label>
+                            <select asp-for="CategoryId" class="form-control border-0 border-bottom hover-underline"
+                                    asp-items="ViewBag.Categories">
+                                <option value="">Select Category</option>
+                            </select>
+                            <span asp-validation-for="CategoryId" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3 position-relative">
+                            <label asp-for="Brand" class="form-label fw-bold text-dark"></label>
+                            <input asp-for="Brand" class="form-control border-0 border-bottom hover-underline" placeholder="Enter brand" />
+                            <span asp-validation-for="Brand" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Details -->
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3 position-relative">
+                            <label asp-for="Weight" class="form-label fw-bold text-dark"></label>
+                            <input asp-for="Weight" class="form-control border-0 border-bottom hover-underline" type="number" step="0.001" value="0.1" />
+                            <span asp-validation-for="Weight" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3 position-relative">
+                            <label asp-for="Color" class="form-label fw-bold text-dark"></label>
+                            <input asp-for="Color" class="form-control border-0 border-bottom hover-underline" placeholder="Enter color" />
+                            <span asp-validation-for="Color" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3 position-relative">
+                            <label asp-for="Size" class="form-label fw-bold text-dark"></label>
+                            <input asp-for="Size" class="form-control border-0 border-bottom hover-underline" placeholder="Enter size" />
+                            <span asp-validation-for="Size" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Image Upload -->
+                <div class="mb-3 position-relative">
+                    <label class="form-label fw-bold text-dark">Product Image</label>
+                    <input type="file" name="imageFile" class="form-control border-0 border-bottom hover-underline" accept="image/*" />
+                    <small class="form-text text-muted">Upload main product image</small>
+                </div>
+
+                <!-- Additional Images -->
+                <div class="mb-3 position-relative">
+                    <label class="form-label fw-bold text-dark">Additional Images</label>
+                    <input type="file" name="additionalImages" class="form-control border-0 border-bottom hover-underline" accept="image/*" multiple />
+                    <small class="form-text text-muted">Upload additional product images (optional)</small>
+                </div>
+
+                <!-- Product Status -->
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3 form-check form-switch">
+                            <input asp-for="IsActive" class="form-check-input" checked />
+                            <label asp-for="IsActive" class="form-check-label fw-bold text-dark"></label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3 form-check form-switch">
+                            <input asp-for="IsFeatured" class="form-check-input" />
+                            <label asp-for="IsFeatured" class="form-check-label fw-bold text-dark"></label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3 form-check form-switch">
+                            <input asp-for="IsPublished" class="form-check-input" checked />
+                            <label asp-for="IsPublished" class="form-check-label fw-bold text-dark"></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <a asp-action="Index" class="btn btn-outline-secondary me-2 transition-all">Cancel</a>
+                    <button type="submit" class="btn btn-primary transition-all">Create Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

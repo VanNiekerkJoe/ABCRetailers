@@ -1,0 +1,153 @@
+﻿@{
+    ViewData["Title"] = "Logout";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ABC Retailers</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --customer-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
+        body {
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            backdrop-filter: blur(10px);
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-glow {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+            .btn-glow:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+                color: white;
+            }
+
+        .btn-customer {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            border: none;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+            .btn-customer:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+                color: white;
+            }
+
+        .logout-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .account-option {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+            .account-option:hover {
+                transform: translateY(-5px);
+                border-color: rgba(255, 255, 255, 0.3);
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            }
+    </style>
+</head>
+<body>
+    <div class="logout-container animate__animated animate__fadeIn">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-6">
+                    <div class="glass-card p-5 text-white text-center">
+                        <div class="mb-4">
+                            <i class="fas fa-sign-out-alt fa-4x mb-3 text-white"></i>
+                            <h1 class="h2 fw-bold">Ready to Switch Accounts?</h1>
+                            <p class="opacity-75 mb-0">You're about to log out. Choose how you'd like to proceed.</p>
+                        </div>
+
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <div class="glass-card p-4 account-option h-100">
+                                    <i class="fas fa-user-shield fa-2x mb-3 text-primary"></i>
+                                    <h5 class="fw-bold">Admin Account</h5>
+                                    <p class="small opacity-75">Manage products, process orders, and view analytics</p>
+                                    <div class="mt-3">
+                                        <small class="text-light">
+                                            <strong>Demo:</strong> admin / password
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="glass-card p-4 account-option h-100">
+                                    <i class="fas fa-user fa-2x mb-3 text-info"></i>
+                                    <h5 class="fw-bold">Customer Account</h5>
+                                    <p class="small opacity-75">Browse products, add to cart, and place orders</p>
+                                    <div class="mt-3">
+                                        <small class="text-light">
+                                            <strong>Demo:</strong> customer / password
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-3">
+                            <form method="post" action="/Login/PerformLogout">
+                                <button type="submit" class="btn btn-glow w-100 py-3 fw-semibold">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Yes, Log Me Out
+                                </button>
+                            </form>
+
+                            <a href="/Home" class="btn btn-outline-light w-100 py-3">
+                                <i class="fas fa-arrow-left me-2"></i>No, Go Back to Dashboard
+                            </a>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-top border-light border-opacity-25">
+                            <small class="opacity-75">
+                                Need help? <a href="#" class="text-white text-decoration-underline">Contact support</a>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

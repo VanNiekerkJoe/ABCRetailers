@@ -1,44 +1,254 @@
 ﻿@{
     ViewData["Title"] = "Dashboard";
+    var username = Context.Session.GetString("Username");
+    var role = Context.Session.GetString("Role");
+    var isAdmin = role == "Admin";
+    var isCustomer = role == "Customer";
 }
 
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8" />
-    <title>@ViewData["Title"]</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container mt-5">
-        <div class="text-center">
-            <h1 class="display-3 text-success fw-bold">LOGIN SUCCESSFUL</h1>
-            <p class="lead mt-4">Welcome back, <strong class="text-primary">@ViewBag.Username</strong></p>
-            <p class="fs-4">Role: <span class="badge bg-info">@ViewBag.Role</span></p>
-
-            <hr class="my-5" />
-
-            <div class="d-grid gap-3 col-6 mx-auto">
-                <a asp-controller="Product" asp-action="Index" class="btn btn-primary btn-lg">
-                    View All Products
-                </a>
-
-                @if (ViewBag.Role == "Admin")
-                {
-                    <a asp-controller="Order" asp-action="Index" class="btn btn-warning btn-lg text-white">
-                        Manage Orders (Admin Only)
-                    </a>
-                }
-
-                <a asp-controller="Login" asp-action="Index" class="btn btn-outline-danger btn-lg">
-                    Logout
-                </a>
-            </div>
-
-            <div class="mt-5 p-4 bg-light rounded">
-                <p class="fs-3 text-success mb-0">Azure SQL + EF Core = 100% WORKING</p>
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card p-4 text-white animate__animated animate__fadeInDown">
+                <h1 class="h2 mb-1">
+                    @if (isAdmin)
+                    {
+                        <text>Welcome back, @username! 👋</text>
+                    }
+                    else
+                    {
+                        <text>Hello, @username! 🎉</text>
+                    }
+                </h1>
+                <p class="opacity-75 mb-0">
+                    @if (isAdmin)
+                    {
+                        <text>Here's what's happening with your store today.</text>
+                    }
+                    else
+                    {
+                        <text>Ready to discover amazing products?</text>
+                    }
+                </p>
             </div>
         </div>
     </div>
-</body>
-</html>
+
+    @if (isAdmin)
+    {
+        <!-- Admin Stats Cards -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-3">
+                <div class="glass-card stats-card p-4 text-white animate__animated animate__fadeInLeft">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="opacity-75 mb-2">Total Products</h6>
+                            <h3 class="fw-bold mb-0">@ViewBag.TotalProducts</h3>
+                        </div>
+                        <div class="bg-primary rounded-circle p-3">
+                            <i class="fas fa-box fa-lg text-white"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="badge bg-success">Live Data</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="glass-card stats-card p-4 text-white animate__animated animate__fadeInLeft animate__delay-1s">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="opacity-75 mb-2">Total Orders</h6>
+                            <h3 class="fw-bold mb-0">@ViewBag.TotalOrders</h3>
+                        </div>
+                        <div class="bg-warning rounded-circle p-3">
+                            <i class="fas fa-shopping-cart fa-lg text-white"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="badge bg-success">Live Data</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="glass-card stats-card p-4 text-white animate__animated animate__fadeInRight animate__delay-1s">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="opacity-75 mb-2">Pending Orders</h6>
+                            <h3 class="fw-bold mb-0">@ViewBag.PendingOrders</h3>
+                        </div>
+                        <div class="bg-info rounded-circle p-3">
+                            <i class="fas fa-clock fa-lg text-white"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="badge bg-warning">Requires attention</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="glass-card stats-card p-4 text-white animate__animated animate__fadeInRight">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="opacity-75 mb-2">Revenue</h6>
+                            <h3 class="fw-bold mb-0">R @ViewBag.TotalRevenue</h3>
+                        </div>
+                        <div class="bg-success rounded-circle p-3">
+                            <i class="fas fa-chart-line fa-lg text-white"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="badge bg-success">Live Data</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Quick Actions -->
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="glass-card p-4 text-white animate__animated animate__zoomIn">
+                    <h4 class="mb-3">Quick Actions</h4>
+                    <div class="d-grid gap-2 d-md-flex">
+                        <a href="/Product" class="btn btn-glow me-md-2 flex-fill">
+                            <i class="fas fa-boxes me-2"></i>Manage Products
+                        </a>
+                        <a href="/Order" class="btn btn-glow flex-fill">
+                            <i class="fas fa-clipboard-list me-2"></i>Process Orders
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="glass-card p-4 text-white animate__animated animate__zoomIn animate__delay-1s">
+                    <h4 class="mb-3">Recent Activity</h4>
+                    @if (ViewBag.TotalOrders > 0)
+                    {
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-circle text-success me-2 fa-xs"></i>
+                            <small>@ViewBag.TotalOrders total orders</small>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-circle text-warning me-2 fa-xs"></i>
+                            <small>@ViewBag.PendingOrders orders pending processing</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-circle text-info me-2 fa-xs"></i>
+                            <small>R @ViewBag.TotalRevenue in revenue</small>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-circle text-secondary me-2 fa-xs"></i>
+                            <small>No orders yet</small>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-circle text-secondary me-2 fa-xs"></i>
+                            <small>No pending orders</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-circle text-secondary me-2 fa-xs"></i>
+                            <small>No revenue yet</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Customer Dashboard -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="glass-card stats-card p-4 text-white animate__animated animate__fadeInLeft">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="opacity-75 mb-2">My Orders</h6>
+                            <h3 class="fw-bold mb-0">@ViewBag.MyOrdersCount</h3>
+                        </div>
+                        <div class="bg-info rounded-circle p-3">
+                            <i class="fas fa-shopping-bag fa-lg text-white"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="badge bg-light text-dark">View History</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="glass-card stats-card p-4 text-white animate__animated animate__fadeInUp">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="opacity-75 mb-2">Cart Items</h6>
+                            <h3 class="fw-bold mb-0">@ViewBag.CartItemsCount</h3>
+                        </div>
+                        <div class="bg-warning rounded-circle p-3">
+                            <i class="fas fa-shopping-cart fa-lg text-white"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="badge bg-light text-dark">Ready to checkout</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="glass-card stats-card p-4 text-white animate__animated animate__fadeInRight">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="opacity-75 mb-2">Available Products</h6>
+                            <h3 class="fw-bold mb-0">@ViewBag.TotalProducts</h3>
+                        </div>
+                        <div class="bg-success rounded-circle p-3">
+                            <i class="fas fa-boxes fa-lg text-white"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="badge bg-light text-dark">Shop now</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Quick Actions -->
+        <div class="row g-4">
+            <div class="col-md-8">
+                <div class="glass-card p-4 text-white animate__animated animate__zoomIn">
+                    <h4 class="mb-3">Quick Shopping</h4>
+                    <div class="d-grid gap-2 d-md-flex">
+                        <a href="/Product" class="btn btn-customer me-md-2 flex-fill py-3">
+                            <i class="fas fa-shopping-bag me-2"></i>Browse Products
+                        </a>
+                        <a href="/Cart" class="btn btn-customer flex-fill py-3">
+                            <i class="fas fa-shopping-cart me-2"></i>View My Cart
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="glass-card p-4 text-white animate__animated animate__zoomIn animate__delay-1s">
+                    <h4 class="mb-3">My Account</h4>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-user me-2"></i>
+                        <small>@Context.Session.GetString("Username")</small>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-envelope me-2"></i>
+                        <small>@ViewBag.CustomerEmail</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-map-marker-alt me-2"></i>
+                        <small>@ViewBag.ShippingAddress</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

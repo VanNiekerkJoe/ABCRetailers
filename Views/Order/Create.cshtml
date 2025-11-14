@@ -1,60 +1,119 @@
-﻿@model ABCRetailers.Models.ViewModels.OrderCreateViewModel
-
+﻿@model IEnumerable<ABCRetailers.Models.Order>
 @{
-    ViewData["Title"] = "Create Order";
+    ViewData["Title"] = "Manage Orders";
 }
 
-<div class="container mt-5 animate__animated animate__fadeInUp">
-    <div class="card shadow-lg border-0 rounded-3">
-        <div class="card-header bg-gradient-primary text-white rounded-top">
-            <h4 class="mb-0">Create New Order</h4>
-        </div>
-        <div class="card-body p-4">
-            <form asp-action="Create" method="post">
-                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-
-                <div class="mb-3 position-relative">
-                    <label asp-for="CustomerId" class="form-label fw-bold text-dark"></label>
-                    <select asp-for="CustomerId" class="form-select border-0 border-bottom hover-underline" asp-items="@(new SelectList(Model.Customers, "RowKey", "Username"))">
-                        <option value="">Select Customer</option>
-                    </select>
-                    <span asp-validation-for="CustomerId" class="text-danger"></span>
-                </div>
-
-                <div class="mb-3 position-relative">
-                    <label asp-for="ProductId" class="form-label fw-bold text-dark"></label>
-                    <select asp-for="ProductId" class="form-select border-0 border-bottom hover-underline" asp-items="@(new SelectList(Model.Products, "RowKey", "ProductName"))">
-                        <option value="">Select Product</option>
-                    </select>
-                    <span asp-validation-for="ProductId" class="text-danger"></span>
-                </div>
-
-                <div class="mb-3 position-relative">
-                    <label asp-for="Quantity" class="form-label fw-bold text-dark"></label>
-                    <input asp-for="Quantity" class="form-control border-0 border-bottom hover-underline" type="number" min="1" />
-                    <span asp-validation-for="Quantity" class="text-danger"></span>
-                </div>
-
-                <div class="mb-3 position-relative">
-                    <label asp-for="OrderDate" class="form-label fw-bold text-dark"></label>
-                    <input asp-for="OrderDate" class="form-control border-0 border-bottom hover-underline" type="date" />
-                    <span asp-validation-for="OrderDate" class="text-danger"></span>
-                </div>
-
-                <div class="d-flex justify-content-end">
-                    <a asp-action="Index" class="btn btn-outline-secondary me-2 transition-all animate__animated animate__pulse animate__infinite infinite">Cancel</a>
-                    <button type="submit" class="btn btn-primary transition-all animate__animated animate__pulse animate__infinite infinite">Create Order</button>
-                </div>
-            </form>
-        </div>
+<div class="card shadow-lg animate__animated animate__fadeIn">
+    <div class="card-header bg-primary text-white">
+        <h2><i class="fas fa-truck"></i> Order Management (Admin)</h2>
+    </div>
+    <div class="card-body">
+        <table class="table table-hover table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Order ID</th>
+                    <th>Order Number</th>
+                    <th>Customer ID</th>
+                    <th>Products</th>
+                    <th>Date</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Payment Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var o in Model)
+                {
+                    <tr>
+                        <td><code>@o.Id</code></td>
+                        <td>@o.OrderNumber</td>
+                        <td>@o.CustomerId</td>
+                        <td>
+                            @if (o.OrderItems != null && o.OrderItems.Any())
+                            {
+                                foreach (var item in o.OrderItems)
+                                {
+                                    <div class="small">
+                                        @item.ProductName (Qty: @item.Quantity)
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">No items</span>
+                            }
+                        </td>
+                        <td>@o.OrderedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>R @o.TotalAmount</td>
+                        <td>
+                            @switch (o.OrderStatus)
+                            {
+                                case "Pending":
+                                    <span class="badge bg-secondary fs-6">Pending</span>
+                                    break;
+                                case "Confirmed":
+                                    <span class="badge bg-info fs-6">Confirmed</span>
+                                    break;
+                                case "Processing":
+                                    <span class="badge bg-primary fs-6">Processing</span>
+                                    break;
+                                case "Shipped":
+                                    <span class="badge bg-warning fs-6">Shipped</span>
+                                    break;
+                                case "Delivered":
+                                    <span class="badge bg-success fs-6">Delivered</span>
+                                    break;
+                                case "Cancelled":
+                                    <span class="badge bg-danger fs-6">Cancelled</span>
+                                    break;
+                                case "Refunded":
+                                    <span class="badge bg-dark fs-6">Refunded</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary fs-6">@o.OrderStatus</span>
+                                    break;
+                            }
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark fs-6">@o.PaymentStatus</span>
+                        </td>
+                        <td>
+                            @if (o.OrderStatus == "Pending" || o.OrderStatus == "Confirmed")
+                            {
+                                <form asp-action="Process" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@o.Id" />
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="fas fa-check"></i> Process Order
+                                    </button>
+                                </form>
+                            }
+                            else if (o.OrderStatus == "Processing")
+                            {
+                                <form asp-action="Ship" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@o.Id" />
+                                    <button type="submit" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-shipping-fast"></i> Ship Order
+                                    </button>
+                                </form>
+                            }
+                            else if (o.OrderStatus == "Shipped")
+                            {
+                                <form asp-action="Deliver" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@o.Id" />
+                                    <button type="submit" class="btn btn-info btn-sm">
+                                        <i class="fas fa-check-double"></i> Deliver
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="text-success"><i class="fas fa-check-double"></i> Completed</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
 </div>
-
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-    <script>
-        // Add JS for dynamic price update if needed
-    </script>
-}

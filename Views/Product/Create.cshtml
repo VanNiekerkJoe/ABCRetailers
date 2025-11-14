@@ -13,10 +13,11 @@
             <form asp-action="Create" method="post" enctype="multipart/form-data">
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
+                <!-- FIXED: Changed ProductName to Name -->
                 <div class="mb-3 position-relative">
-                    <label asp-for="ProductName" class="form-label fw-bold text-dark"></label>
-                    <input asp-for="ProductName" class="form-control border-0 border-bottom hover-underline" placeholder="Enter product name" />
-                    <span asp-validation-for="ProductName" class="text-danger"></span>
+                    <label asp-for="Name" class="form-label fw-bold text-dark">Product Name</label>
+                    <input asp-for="Name" class="form-control border-0 border-bottom hover-underline" placeholder="Enter product name" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3 position-relative">
@@ -31,10 +32,11 @@
                     <span asp-validation-for="Price" class="text-danger"></span>
                 </div>
 
+                <!-- FIXED: Changed StockAvailable to StockQuantity -->
                 <div class="mb-3 position-relative">
-                    <label asp-for="StockAvailable" class="form-label fw-bold text-dark"></label>
-                    <input asp-for="StockAvailable" class="form-control border-0 border-bottom hover-underline" type="number" placeholder="Enter stock quantity" />
-                    <span asp-validation-for="StockAvailable" class="text-danger"></span>
+                    <label asp-for="StockQuantity" class="form-label fw-bold text-dark">Stock Quantity</label>
+                    <input asp-for="StockQuantity" class="form-control border-0 border-bottom hover-underline" type="number" placeholder="Enter stock quantity" />
+                    <span asp-validation-for="StockQuantity" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3 position-relative">
@@ -43,8 +45,8 @@
                 </div>
 
                 <div class="d-flex justify-content-end">
-                    <a asp-action="Index" class="btn btn-outline-secondary me-2 transition-all animate__animated animate__pulse animate__infinite infinite">Cancel</a>
-                    <button type="submit" class="btn btn-primary transition-all animate__animated animate__pulse animate__infinite infinite">Create Product</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary me-2 transition-all">Cancel</a>
+                    <button type="submit" class="btn btn-primary transition-all">Create Product</button>
                 </div>
             </form>
         </div>

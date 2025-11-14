@@ -1,48 +1,45 @@
 ﻿using ABCRetailers.Data;
+using ABCRetailers.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add MVC
-builder.Services.AddControllersWithViews();
+// === SERVICES ===
+builder.Services.AddControllersWithViews();  // MVC
+builder.Services.AddControllers();           // API
 
-// THIS LINE FIXES THE TRANSIENT ERROR FOREVER
+builder.Services.AddHttpClient<ApiClientService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ApiClientService>();
+
 builder.Services.AddDbContext<AuthDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        sqlOptions => sqlOptions.EnableRetryOnFailure(
-            maxRetryCount: 5,
-            maxRetryDelay: TimeSpan.FromSeconds(10),
-            errorNumbersToAdd: null)));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddAntiforgery();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
 });
 
 var app = builder.Build();
 
-// Show real errors while developing
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-}
-else
-{
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
-}
-
+// === MIDDLEWARE ===
+app.UseDeveloperExceptionPage();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
+app.UseAntiforgery();
 app.UseAuthorization();
 
-app.MapControllerRoute(
+// === ROUTES ===
+// THESE TWO LINES ARE REQUIRED:
+app.MapControllers();                    // API ROUTES
+app.MapControllerRoute(                  // MVC ROUTES
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 

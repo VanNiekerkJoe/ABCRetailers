@@ -67,6 +67,29 @@ body {
     text-decoration: underline;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Hover effect on nav links */
 }
+.badge-placed {
+    background: linear-gradient(45deg, #ffc107, #fd7e14);
+}
+
+.badge-processed {
+    background: linear-gradient(45deg, #28a745, #20c997);
+}
+
+.bg-info {
+    background: linear-gradient(45deg, #17a2b8, #6f42c1) !important;
+}
+
+.bg-success {
+    background: linear-gradient(45deg, #28a745, #20c997) !important;
+}
+
+.bg-danger {
+    background: linear-gradient(45deg, #dc3545, #e83e8c) !important;
+}
+
+.bg-secondary {
+    background: linear-gradient(45deg, #6c757d, #495057) !important;
+}
 
 /* More lively animations */
 .animate__pulse {

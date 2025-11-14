@@ -306,29 +306,23 @@
 </div>
 
 @functions {
-    public string GetStatusBadgeClass(string status)
+    private string GetStatusBadgeClass(string status) => status switch
     {
-        return status switch
-        {
-            "Pending" => "badge-placed",
-            "Processing" => "badge-processed",
-            "Shipped" => "bg-info",
-            "Delivered" => "bg-success",
-            "Cancelled" => "bg-danger",
-            _ => "bg-secondary"
-        };
-    }
+        "Pending" => "badge-placed",
+        "Processing" => "badge-processed",
+        "Shipped" => "bg-info",
+        "Delivered" => "bg-success",
+        "Cancelled" => "bg-danger",
+        _ => "bg-secondary"
+    };
 
-    public string GetStatusIcon(string status)
+    private string GetStatusIcon(string status) => status switch
     {
-        return status switch
-        {
-            "Pending" => "fas fa-clock",
-            "Processing" => "fas fa-cog",
-            "Shipped" => "fas fa-shipping-fast",
-            "Delivered" => "fas fa-check-circle",
-            "Cancelled" => "fas fa-times-circle",
-            _ => "fas fa-question"
-        };
-    }
+        "Pending" => "fas fa-clock",
+        "Processing" => "fas fa-cog",
+        "Shipped" => "fas fa-shipping-fast",
+        "Delivered" => "fas fa-check-circle",
+        "Cancelled" => "fas fa-times-circle",
+        _ => "fas fa-question"
+    };
 }
