@@ -1,0 +1,380 @@
+﻿@model ABCRetailers.Models.Order
+
+@{
+    ViewData["Title"] = "Manage Order Status";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb glass-card text-white px-3 py-2">
+            <li class="breadcrumb-item"><a href="/Home" class="text-white text-decoration-none">Home</a></li>
+            <li class="breadcrumb-item"><a href="/Order" class="text-white text-decoration-none">Orders</a></li>
+            <li class="breadcrumb-item"><a href="@Url.Action("Details", new { id = Model.Id })" class="text-white text-decoration-none">Order Details</a></li>
+            <li class="breadcrumb-item active text-white" aria-current="page">Manage Status</li>
+        </ol>
+    </nav>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="glass-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <h2 class="h3 text-white mb-1">Manage Order Status</h2>
+                        <p class="text-white opacity-75 mb-0">Order #@Model.OrderNumber</p>
+                    </div>
+                    <span class="badge @GetStatusBadgeClass(Model.OrderStatus) px-3 py-2 fs-6">
+                        <i class="@GetStatusIcon(Model.OrderStatus) me-1"></i>@Model.OrderStatus
+                    </span>
+                </div>
+
+                <!-- Current Order Information -->
+                <div class="row text-white mb-4">
+                    <div class="col-md-6">
+                        <h5>Customer Information</h5>
+                        <p class="mb-1"><strong>Name:</strong> @Model.Customer?.FirstName @Model.Customer?.LastName</p>
+                        <p class="mb-1"><strong>Email:</strong> @Model.Customer?.User?.Email</p>
+                        <p class="mb-1"><strong>Phone:</strong> @(Model.Customer?.PhoneNumber ?? "N/A")</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Order Details</h5>
+                        <p class="mb-1"><strong>Order Date:</strong> @Model.OrderedAt.ToString("MMM dd, yyyy HH:mm")</p>
+                        <p class="mb-1"><strong>Total Amount:</strong> R @Model.TotalAmount</p>
+                        <p class="mb-1"><strong>Items:</strong> @Model.OrderItems.Sum(oi => oi.Quantity)</p>
+                        @if (!string.IsNullOrEmpty(Model.TrackingNumber))
+                        {
+                            <p class="mb-1"><strong>Tracking #:</strong> @Model.TrackingNumber</p>
+                        }
+                    </div>
+                </div>
+
+                <!-- Order Items -->
+                <div class="mb-4">
+                    <h5 class="text-white mb-3">Order Items</h5>
+                    @foreach (var orderItem in Model.OrderItems)
+                    {
+                        <div class="d-flex align-items-center mb-3 p-3 glass-card text-white">
+                            @if (!string.IsNullOrEmpty(orderItem.Product?.MainImageUrl))
+                            {
+                                <img src="@orderItem.Product.MainImageUrl" class="rounded me-3"
+                                     style="width: 60px; height: 60px; object-fit: cover;"
+                                     alt="@orderItem.ProductName">
+                            }
+                            else
+                            {
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center me-3"
+                                     style="width: 60px; height: 60px;">
+                                    <i class="fas fa-box text-muted"></i>
+                                </div>
+                            }
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">@orderItem.ProductName</h6>
+                                <small class="opacity-75">SKU: @orderItem.ProductSku</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold">R @orderItem.UnitPrice</div>
+                                <small class="opacity-75">Qty: @orderItem.Quantity</small>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Status Update Form -->
+                <div class="glass-card p-4">
+                    <h4 class="text-white mb-4">Update Order Status</h4>
+
+                    <form method="post" action="@Url.Action("UpdateOrderStatus")">
+                        <input type="hidden" name="id" value="@Model.Id" />
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="status" class="form-label text-white">New Status</label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="">Select Status</option>
+                                    @foreach (var statusOption in ViewBag.StatusOptions)
+                                    {
+                                        <option value="@statusOption" selected="@(statusOption == Model.OrderStatus)">
+                                            @statusOption
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="trackingNumber" class="form-label text-white">Tracking Number</label>
+                                <input type="text" class="form-control" id="trackingNumber" name="trackingNumber"
+                                       value="@Model.TrackingNumber" placeholder="Enter tracking number">
+                            </div>
+
+                            <div class="col-12">
+                                <label for="notes" class="form-label text-white">Admin Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3"
+                                          placeholder="Add any notes about this status change...">@Model.AdminNotes</textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="fas fa-save me-1"></i>Update Status
+                                </button>
+                                <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i>Back to Details
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Sidebar -->
+        <div class="col-lg-4">
+            <div class="glass-card p-4 text-white mb-4">
+                <h5 class="mb-3">Quick Status Actions</h5>
+                <div class="d-grid gap-2">
+                    @if (Model.OrderStatus != "Processing")
+                    {
+                        <form method="post" action="@Url.Action("MarkAsProcessing")" class="d-grid">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button type="submit" class="btn btn-warning text-dark">
+                                <i class="fas fa-cog me-2"></i>Mark as Processing
+                            </button>
+                        </form>
+                    }
+
+                    @if (Model.OrderStatus != "Shipped")
+                    {
+                        <form method="post" action="@Url.Action("MarkAsShipped")" class="d-grid">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <div class="input-group mb-2">
+                                <input type="text" name="trackingNumber" class="form-control" placeholder="Tracking #" value="@Model.TrackingNumber">
+                                <button type="submit" class="btn btn-info">
+                                    <i class="fas fa-shipping-fast me-1"></i>Ship
+                                </button>
+                            </div>
+                        </form>
+                    }
+
+                    @if (Model.OrderStatus != "Delivered")
+                    {
+                        <form method="post" action="@Url.Action("MarkAsDelivered")" class="d-grid">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check-circle me-2"></i>Mark as Delivered
+                            </button>
+                        </form>
+                    }
+
+                    @if (Model.OrderStatus != "Cancelled")
+                    {
+                        <form method="post" action="@Url.Action("UpdateOrderStatus")" class="d-grid"
+                              onsubmit="return confirm('Are you sure you want to cancel this order? This will restore product stock if applicable.');">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="status" value="Cancelled" />
+                            <input type="hidden" name="notes" value="Order cancelled via quick action." />
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-times-circle me-2"></i>Cancel Order
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+
+            <!-- Status History -->
+            <div class="glass-card p-4 text-white">
+                <h5 class="mb-3">Status Timeline</h5>
+                <div class="status-timeline">
+                    <div class="timeline-item @(Model.OrderStatus == "Delivered" || Model.DeliveredAt.HasValue ? "completed" : "")">
+                        <i class="fas fa-check-circle @(Model.OrderStatus == "Delivered" ? "text-success" : "text-secondary")"></i>
+                        <span>Delivered</span>
+                        <small>@(Model.DeliveredAt?.ToString("MMM dd, yyyy HH:mm") ?? "Pending")</small>
+                    </div>
+                    <div class="timeline-item @(Model.OrderStatus == "Shipped" || Model.ShippedAt.HasValue ? "completed" : "")">
+                        <i class="fas fa-shipping-fast @(Model.OrderStatus == "Shipped" ? "text-info" : "text-secondary")"></i>
+                        <span>Shipped</span>
+                        <small>@(Model.ShippedAt?.ToString("MMM dd, yyyy HH:mm") ?? "Pending")</small>
+                    </div>
+                    <div class="timeline-item @(Model.OrderStatus == "Processing" || Model.PaidAt.HasValue ? "completed" : "")">
+                        <i class="fas fa-cog @(Model.OrderStatus == "Processing" ? "text-warning" : "text-secondary")"></i>
+                        <span>Processing</span>
+                        <small>@(Model.PaidAt?.ToString("MMM dd, yyyy HH:mm") ?? "Pending")</small>
+                    </div>
+                    <div class="timeline-item completed">
+                        <i class="fas fa-shopping-cart text-primary"></i>
+                        <span>Order Placed</span>
+                        <small>@Model.OrderedAt.ToString("MMM dd, yyyy HH:mm")</small>
+                    </div>
+                </div>
+
+                @if (Model.CancelledAt.HasValue)
+                {
+                    <div class="timeline-item cancelled mt-3">
+                        <i class="fas fa-times-circle text-danger"></i>
+                        <span>Cancelled</span>
+                        <small>@Model.CancelledAt.Value.ToString("MMM dd, yyyy HH:mm")</small>
+                    </div>
+                }
+            </div>
+
+            <!-- Order Summary -->
+            <div class="glass-card p-4 text-white mt-4">
+                <h5 class="mb-3">Order Summary</h5>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <span>R @Model.Subtotal</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Shipping:</span>
+                    <span>R @Model.ShippingAmount</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Tax:</span>
+                    <span>R @Model.TaxAmount</span>
+                </div>
+                @if (Model.DiscountAmount > 0)
+                {
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <span>Discount:</span>
+                        <span>-R @Model.DiscountAmount</span>
+                    </div>
+                }
+                <hr class="my-2">
+                <div class="d-flex justify-content-between fw-bold">
+                    <span>Total:</span>
+                    <span class="text-warning">R @Model.TotalAmount</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .status-timeline {
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 1rem;
+    }
+
+    .timeline-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+
+        .timeline-item.completed {
+            background: rgba(40, 167, 69, 0.2);
+            border-left: 4px solid #28a745;
+        }
+
+        .timeline-item.cancelled {
+            background: rgba(220, 53, 69, 0.2);
+            border-left: 4px solid #dc3545;
+        }
+
+        .timeline-item i {
+            font-size: 1.2rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .timeline-item span {
+            flex-grow: 1;
+            font-weight: 500;
+        }
+
+        .timeline-item small {
+            opacity: 0.7;
+            font-size: 0.8rem;
+        }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-focus on status dropdown
+            const statusSelect = document.getElementById('status');
+            if (statusSelect) {
+                statusSelect.focus();
+            }
+
+            // Show/hide tracking number based on status
+            const statusField = document.getElementById('status');
+            const trackingField = document.getElementById('trackingNumber');
+
+            if (statusField && trackingField) {
+                statusField.addEventListener('change', function() {
+                    if (this.value === 'Shipped') {
+                        trackingField.required = true;
+                        trackingField.parentElement.classList.add('required-field');
+                    } else {
+                        trackingField.required = false;
+                        trackingField.parentElement.classList.remove('required-field');
+                    }
+                });
+
+                // Trigger change event on page load
+                statusField.dispatchEvent(new Event('change'));
+            }
+
+            // Add confirmation for cancellation
+            const cancelButtons = document.querySelectorAll('button[value="Cancelled"]');
+            cancelButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    if (!confirm('Are you sure you want to cancel this order? This action will restore product stock if applicable.')) {
+                        e.preventDefault();
+                    }
+                });
+            });
+        });
+    </script>
+}
+
+@functions {
+    public string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Pending" => "badge-placed",
+            "Confirmed" => "bg-info",
+            "Processing" => "badge-processed",
+            "Shipped" => "bg-primary",
+            "Delivered" => "bg-success",
+            "Cancelled" => "bg-danger",
+            "Refunded" => "bg-warning text-dark",
+            _ => "bg-secondary"
+        };
+    }
+
+    public string GetStatusIcon(string status)
+    {
+        return status switch
+        {
+            "Pending" => "fas fa-clock",
+            "Confirmed" => "fas fa-check",
+            "Processing" => "fas fa-cog",
+            "Shipped" => "fas fa-shipping-fast",
+            "Delivered" => "fas fa-check-circle",
+            "Cancelled" => "fas fa-times-circle",
+            "Refunded" => "fas fa-money-bill-wave",
+            _ => "fas fa-question"
+        };
+    }
+}

@@ -125,6 +125,91 @@
             font-size: 0.7em;
             padding: 0.25em 0.5em;
         }
+
+        /* Custom modern styles */
+        .bg-gradient-primary {
+            background: linear-gradient(180deg, #4e73df 10%, #224abe 100%);
+        }
+
+        .bg-gradient-success {
+            background: linear-gradient(180deg, #1cc88a 10%, #13855c 100%);
+        }
+
+        .bg-gradient-info {
+            background: linear-gradient(180deg, #36b9cc 10%, #258391 100%);
+        }
+
+        .bg-light-grey {
+            background-color: #f8f9fa;
+        }
+
+        .text-black {
+            color: #000000 !important;
+        }
+
+        .text-dark {
+            color: #212529 !important;
+        }
+
+        .transition-all {
+            transition: all 0.3s ease;
+        }
+
+        .card:hover, .btn:hover, tr:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .hover-underline:hover {
+            text-decoration: underline;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .hover-underline-tr:hover td {
+            text-decoration: underline;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .hover-underline-card:hover {
+            text-decoration: underline;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .table th, .table td {
+            vertical-align: middle;
+            color: #000000;
+        }
+
+        .badge {
+            padding: 0.5em 1em;
+            color: #ffffff;
+        }
+
+        .nav-link:hover {
+            text-decoration: underline;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .bg-info {
+            background: linear-gradient(45deg, #17a2b8, #6f42c1) !important;
+        }
+
+        .bg-success {
+            background: linear-gradient(45deg, #28a745, #20c997) !important;
+        }
+
+        .bg-danger {
+            background: linear-gradient(45deg, #dc3545, #e83e8c) !important;
+        }
+
+        .bg-secondary {
+            background: linear-gradient(45deg, #6c757d, #495057) !important;
+        }
+
+        /* More lively animations */
+        .animate__pulse {
+            animation-duration: 2s;
+        }
     </style>
 </head>
 <body class="d-flex flex-column h-100 @(Context.Session.GetString("Role") == "Customer" ? "body-customer" : "")">
@@ -215,11 +300,117 @@
     </nav>
 
     <main class="flex-shrink-0 py-4">
+        <!-- Display TempData messages -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="container mb-4">
+                <div class="alert alert-success alert-dismissible fade show animate__animated animate__bounceIn" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="container mb-4">
+                <div class="alert alert-danger alert-dismissible fade show animate__animated animate__shakeX" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        }
+
+        @if (TempData["WarningMessage"] != null)
+        {
+            <div class="container mb-4">
+                <div class="alert alert-warning alert-dismissible fade show animate__animated animate__pulse" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["WarningMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        }
+
+        @if (TempData["InfoMessage"] != null)
+        {
+            <div class="container mb-4">
+                <div class="alert alert-info alert-dismissible fade show animate__animated animate__fadeIn" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>@TempData["InfoMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        }
+
         @RenderBody()
     </main>
 
+    <!-- Footer -->
+    <footer class="mt-auto py-3">
+        <div class="container">
+            <div class="text-center text-white opacity-75">
+                <small>&copy; 2024 ABC Retailers - All rights reserved</small>
+            </div>
+        </div>
+    </footer>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- jQuery (for validation if needed) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script>
+        // Auto-dismiss alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+
+            // Add loading states to buttons
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function() {
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    if (submitBtn && !submitBtn.disabled) {
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing...';
+                        submitBtn.disabled = true;
+                    }
+                });
+            });
+
+            // Add hover effects to interactive elements
+            const interactiveElements = document.querySelectorAll('.btn, .card, .nav-link, .product-card');
+            interactiveElements.forEach(element => {
+                element.addEventListener('mouseenter', function() {
+                    this.style.transition = 'all 0.3s ease';
+                });
+            });
+        });
+
+        // Function to confirm deletions
+        function confirmDelete(message = 'Are you sure you want to delete this item? This action cannot be undone.') {
+            return confirm(message);
+        }
+
+        // Function to show loading state
+        function showLoading(element) {
+            const originalText = element.innerHTML;
+            element.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
+            element.disabled = true;
+
+            // Return function to restore original state
+            return function() {
+                element.innerHTML = originalText;
+                element.disabled = false;
+            };
+        }
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

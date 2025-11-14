@@ -127,31 +127,8 @@ namespace ABCRetailers.Controllers
             }
         }
 
-        [HttpPost]
-        public async Task<IActionResult> UpdateOrderStatus(string orderId, string status)
-        {
-            try
-            {
-                var order = await _db.Orders.FindAsync(orderId);
-                if (order != null)
-                {
-                    order.OrderStatus = status;
-                    await _db.SaveChangesAsync();
-                    TempData["SuccessMessage"] = $"Order {orderId} status updated to {status}!";
-                }
-                else
-                {
-                    TempData["ErrorMessage"] = "Order not found!";
-                }
-                return RedirectToAction("Index");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating order status for {OrderId}", orderId);
-                TempData["ErrorMessage"] = "Error updating order status. Please try again.";
-                return RedirectToAction("Index");
-            }
-        }
+        // FIXED: Removed the duplicate UpdateOrderStatus method that was causing ambiguity
+        // Only keeping the comprehensive one below
 
         [HttpPost]
         public async Task<IActionResult> CancelOrder(string orderId)
@@ -285,6 +262,205 @@ namespace ABCRetailers.Controllers
                 _logger.LogError(ex, "Error exporting orders");
                 TempData["ErrorMessage"] = "Error exporting orders. Please try again.";
                 return RedirectToAction("Index");
+            }
+        }
+
+        // NEW: Order Status Management Methods
+        public async Task<IActionResult> ManageStatus(string id)
+        {
+            try
+            {
+                var order = await _db.Orders
+                    .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                    .Include(o => o.Customer)
+                    .ThenInclude(c => c.User)
+                    .FirstOrDefaultAsync(o => o.Id == id);
+
+                if (order == null)
+                {
+                    TempData["ErrorMessage"] = "Order not found!";
+                    return RedirectToAction("Index");
+                }
+
+                ViewBag.StatusOptions = new List<string>
+                {
+                    "Pending", "Confirmed", "Processing", "Shipped", "Delivered", "Cancelled", "Refunded"
+                };
+
+                return View(order);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading order for status management");
+                TempData["ErrorMessage"] = "Error loading order. Please try again.";
+                return RedirectToAction("Index");
+            }
+        }
+
+        // FIXED: This is now the only UpdateOrderStatus method
+        [HttpPost]
+        [Route("Order/UpdateOrderStatus")] // Explicit route to avoid ambiguity
+        public async Task<IActionResult> UpdateOrderStatus(string id, string status, string notes = "", string trackingNumber = "")
+        {
+            try
+            {
+                var order = await _db.Orders.FindAsync(id);
+                if (order == null)
+                {
+                    TempData["ErrorMessage"] = "Order not found!";
+                    return RedirectToAction("Index");
+                }
+
+                var oldStatus = order.OrderStatus;
+                order.OrderStatus = status;
+
+                if (!string.IsNullOrEmpty(notes))
+                {
+                    order.AdminNotes = string.IsNullOrEmpty(order.AdminNotes)
+                        ? notes
+                        : $"{order.AdminNotes}\n[{DateTime.UtcNow:yyyy-MM-dd HH:mm}]: {notes}";
+                }
+
+                if (!string.IsNullOrEmpty(trackingNumber))
+                {
+                    order.TrackingNumber = trackingNumber;
+                }
+
+                // Update timestamps based on status changes
+                switch (status)
+                {
+                    case "Processing":
+                        // Set processing timestamp if not already set
+                        if (order.PaidAt == null)
+                            order.PaidAt = DateTime.UtcNow;
+                        break;
+                    case "Shipped":
+                        order.ShippedAt = DateTime.UtcNow;
+                        order.TrackingNumber = order.TrackingNumber ?? $"TRK{DateTime.UtcNow.Ticks}";
+                        break;
+                    case "Delivered":
+                        order.DeliveredAt = DateTime.UtcNow;
+                        break;
+                    case "Cancelled":
+                        order.CancelledAt = DateTime.UtcNow;
+
+                        // Restore product stock if order was processed
+                        if (oldStatus == "Processing" || oldStatus == "Shipped")
+                        {
+                            var orderItems = await _db.OrderItems
+                                .Include(oi => oi.Product)
+                                .Where(oi => oi.OrderId == id)
+                                .ToListAsync();
+
+                            foreach (var orderItem in orderItems)
+                            {
+                                if (orderItem.Product != null)
+                                {
+                                    orderItem.Product.StockQuantity += orderItem.Quantity;
+                                }
+                            }
+                        }
+                        break;
+                }
+
+                await _db.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = $"Order #{order.OrderNumber} status updated from {oldStatus} to {status}!";
+                return RedirectToAction("ManageStatus", new { id = id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating order status for {OrderId}", id);
+                TempData["ErrorMessage"] = "Error updating order status. Please try again.";
+                return RedirectToAction("ManageStatus", new { id = id });
+            }
+        }
+
+        // NEW: Quick status update methods for common actions - with explicit routes
+        [HttpPost]
+        [Route("Order/MarkAsProcessing")]
+        public async Task<IActionResult> MarkAsProcessing(string id)
+        {
+            return await UpdateOrderStatus(id, "Processing", "Order marked as processing via quick action.");
+        }
+
+        [HttpPost]
+        [Route("Order/MarkAsShipped")]
+        public async Task<IActionResult> MarkAsShipped(string id, string trackingNumber = "")
+        {
+            return await UpdateOrderStatus(id, "Shipped", "Order marked as shipped via quick action.", trackingNumber);
+        }
+
+        [HttpPost]
+        [Route("Order/MarkAsDelivered")]
+        public async Task<IActionResult> MarkAsDelivered(string id)
+        {
+            return await UpdateOrderStatus(id, "Delivered", "Order marked as delivered via quick action.");
+        }
+
+        // NEW: Simple status update for the order index page (different route)
+        [HttpPost]
+        [Route("Order/UpdateStatusSimple")]
+        public async Task<IActionResult> UpdateStatusSimple(string orderId, string status)
+        {
+            try
+            {
+                var order = await _db.Orders.FindAsync(orderId);
+                if (order != null)
+                {
+                    var oldStatus = order.OrderStatus;
+                    order.OrderStatus = status;
+                    await _db.SaveChangesAsync();
+                    TempData["SuccessMessage"] = $"Order {orderId} status updated from {oldStatus} to {status}!";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Order not found!";
+                }
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating order status for {OrderId}", orderId);
+                TempData["ErrorMessage"] = "Error updating order status. Please try again.";
+                return RedirectToAction("Index");
+            }
+        }
+
+        // NEW: Get order status history (for API or future use)
+        public async Task<IActionResult> GetStatusHistory(string id)
+        {
+            try
+            {
+                var order = await _db.Orders
+                    .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                    .Include(o => o.Customer)
+                    .FirstOrDefaultAsync(o => o.Id == id);
+
+                if (order == null)
+                {
+                    return NotFound(new { error = "Order not found" });
+                }
+
+                var statusHistory = new
+                {
+                    OrderedAt = order.OrderedAt,
+                    PaidAt = order.PaidAt,
+                    ShippedAt = order.ShippedAt,
+                    DeliveredAt = order.DeliveredAt,
+                    CancelledAt = order.CancelledAt,
+                    CurrentStatus = order.OrderStatus,
+                    AdminNotes = order.AdminNotes
+                };
+
+                return Ok(statusHistory);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting status history for {OrderId}", id);
+                return StatusCode(500, new { error = "Error retrieving status history" });
             }
         }
     }

@@ -158,25 +158,31 @@
                             </td>
                             <td class="text-center pe-4">
                                 <div class="btn-group" role="group">
+                                    <!-- NEW: Status Management Button -->
+                                    <a href="@Url.Action("ManageStatus", new { id = order.Id })"
+                                       class="btn btn-primary btn-sm" title="Manage Status">
+                                        <i class="fas fa-cog"></i>
+                                    </a>
+
                                     @if (order.OrderStatus == "Pending")
                                     {
                                         <form method="post" action="@Url.Action("ProcessOrder")" class="d-inline">
                                             <input type="hidden" name="orderId" value="@order.Id" />
                                             <button type="submit" class="btn btn-success btn-sm" title="Process Order">
-                                                <i class="fas fa-cog"></i>
+                                                <i class="fas fa-play"></i>
                                             </button>
                                         </form>
                                     }
 
-                                    <!-- Status Dropdown -->
+                                    <!-- Status Dropdown - UPDATED: Using UpdateStatusSimple instead of UpdateOrderStatus -->
                                     <div class="dropdown d-inline">
                                         <button class="btn btn-info btn-sm dropdown-toggle" type="button"
-                                                data-bs-toggle="dropdown" title="Change Status">
-                                            <i class="fas fa-edit"></i>
+                                                data-bs-toggle="dropdown" title="Quick Actions">
+                                            <i class="fas fa-bolt"></i>
                                         </button>
                                         <ul class="dropdown-menu">
                                             <li>
-                                                <form method="post" action="@Url.Action("UpdateOrderStatus")">
+                                                <form method="post" action="@Url.Action("UpdateStatusSimple")">
                                                     <input type="hidden" name="orderId" value="@order.Id" />
                                                     <input type="hidden" name="status" value="Processing" />
                                                     <button type="submit" class="dropdown-item">
@@ -185,7 +191,7 @@
                                                 </form>
                                             </li>
                                             <li>
-                                                <form method="post" action="@Url.Action("UpdateOrderStatus")">
+                                                <form method="post" action="@Url.Action("UpdateStatusSimple")">
                                                     <input type="hidden" name="orderId" value="@order.Id" />
                                                     <input type="hidden" name="status" value="Shipped" />
                                                     <button type="submit" class="dropdown-item">
@@ -194,7 +200,7 @@
                                                 </form>
                                             </li>
                                             <li>
-                                                <form method="post" action="@Url.Action("UpdateOrderStatus")">
+                                                <form method="post" action="@Url.Action("UpdateStatusSimple")">
                                                     <input type="hidden" name="orderId" value="@order.Id" />
                                                     <input type="hidden" name="status" value="Delivered" />
                                                     <button type="submit" class="dropdown-item">
@@ -214,6 +220,12 @@
                                             </li>
                                         </ul>
                                     </div>
+
+                                    <!-- View Details Button -->
+                                    <a href="@Url.Action("Details", new { id = order.Id })"
+                                       class="btn btn-secondary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
 
                                     <!-- Delete Button -->
                                     <form method="post" action="@Url.Action("DeleteOrder")"

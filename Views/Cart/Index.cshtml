@@ -1,328 +1,178 @@
-﻿@model ABCRetailers.Models.ViewModels.OrderIndexViewModel
+﻿@model ABCRetailers.Models.ViewModels.CartViewModel
 
 @{
-    ViewData["Title"] = "Order Management";
-    var statuses = ViewBag.Statuses as List<string> ?? new List<string>();
-    var sortOptions = ViewBag.SortOptions as List<string> ?? new List<string>();
+    ViewData["Title"] = "Shopping Cart";
 }
 
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h2 text-white mb-1 animate__animated animate__fadeInDown">Order Management</h1>
-            <p class="text-white opacity-75 animate__animated animate__fadeInDown animate__delay-1s">
-                Manage and process customer orders
-            </p>
+            <h1 class="h2 text-white mb-1">Shopping Cart</h1>
+            <p class="text-white opacity-75">Review your items and proceed to checkout</p>
         </div>
         <div class="d-flex gap-2">
-            <span class="badge bg-warning text-dark fs-6 animate__animated animate__bounceIn">
-                <i class="fas fa-clock me-1"></i>@Model.Orders.Count(o => o.OrderStatus == "Pending") Pending
+            <span class="badge bg-warning text-dark fs-6">
+                <i class="fas fa-shopping-cart me-1"></i>@Model.TotalItems Items
             </span>
-            <span class="badge bg-success fs-6 animate__animated animate__bounceIn animate__delay-1s">
-                <i class="fas fa-check me-1"></i>@Model.Orders.Count(o => o.OrderStatus == "Processing") Processed
+            <span class="badge bg-success fs-6">
+                <i class="fas fa-money-bill me-1"></i>R @Model.GrandTotal
             </span>
-            <a href="@Url.Action("ExportOrders")" class="btn btn-outline-light btn-sm ms-2">
-                <i class="fas fa-download me-1"></i>Export CSV
-            </a>
         </div>
     </div>
 
-    <!-- Search and Filter Section -->
-    <div class="glass-card p-4 mb-4">
-        <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-3">
-                <label for="search" class="form-label text-white">Search Orders</label>
-                <input type="text" class="form-control" id="search" name="search"
-                       value="@Model.Search" placeholder="Order ID, Customer, Product...">
-            </div>
-            <div class="col-md-2">
-                <label for="status" class="form-label text-white">Status</label>
-                <select class="form-select" id="status" name="status">
-                    <option value="">All Statuses</option>
-                    @foreach (var status in statuses)
-                    {
-                        <option value="@status" selected="@(status == Model.Status)">@status</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label for="sort" class="form-label text-white">Sort By</label>
-                <select class="form-select" id="sort" name="sort">
-                    @foreach (var sort in sortOptions)
-                    {
-                        <option value="@sort" selected="@(sort == Model.Sort)">
-                            @(sort.Replace("_", " ").ToUpperInvariant())
-                        </option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label for="pageSize" class="form-label text-white">Page Size</label>
-                <select class="form-select" id="pageSize" name="pageSize" onchange="this.form.submit()">
-                    <option value="10" selected="@(Model.PageSize == 10)">10</option>
-                    <option value="25" selected="@(Model.PageSize == 25)">25</option>
-                    <option value="50" selected="@(Model.PageSize == 50)">50</option>
-                </select>
-            </div>
-            <div class="col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-glow flex-fill">
-                    <i class="fas fa-filter me-1"></i>Apply Filters
-                </button>
-                <a href="@Url.Action("Index")" class="btn btn-outline-light">
-                    <i class="fas fa-times me-1"></i>Clear
-                </a>
-            </div>
-        </form>
-    </div>
-
-    <!-- Orders Table -->
-    <div class="table-glass animate__animated animate__fadeInUp">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col" class="ps-4">Order ID</th>
-                        <th scope="col">Customer</th>
-                        <th scope="col">Product</th>
-                        <th scope="col">Order Date</th>
-                        <th scope="col">Quantity</th>
-                        <th scope="col">Unit Price</th>
-                        <th scope="col">Total Price</th>
-                        <th scope="col">Status</th>
-                        <th scope="col" class="text-center pe-4">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var order in Model.Orders)
-                    {
-                        var firstOrderItem = order.OrderItems?.FirstOrDefault();
-                        var productId = firstOrderItem?.ProductId;
-                        var truncatedProductId = productId != null && productId.Length > 8 ? productId.Substring(0, 8) + "..." : productId;
-                        var truncatedOrderId = order.Id.Length > 8 ? order.Id.Substring(0, 8) + "..." : order.Id;
-
-                        <tr class="animate__animated animate__fadeIn">
-                            <td class="ps-4 fw-bold">
-                                <a href="@Url.Action("Details", new { id = order.Id })"
-                                   class="text-decoration-none" title="View Details">
-                                    #@truncatedOrderId
-                                </a>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center"
-                                         style="width: 35px; height: 35px;">
-                                        <i class="fas fa-user text-white fa-sm"></i>
-                                    </div>
-                                    <div class="ms-2">
-                                        <div class="fw-semibold">@order.Customer?.FirstName @order.Customer?.LastName</div>
-                                        <small class="text-muted">ID: @order.CustomerId</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    @if (firstOrderItem?.Product?.MainImageUrl != null)
-                                    {
-                                        <img src="@firstOrderItem.Product.MainImageUrl" class="rounded me-2"
-                                             style="width: 40px; height: 40px; object-fit: cover;"
-                                             alt="@firstOrderItem.ProductName">
-                                    }
-                                    else
-                                    {
-                                        <div class="rounded me-2 bg-light d-flex align-items-center justify-content-center"
-                                             style="width: 40px; height: 40px;">
-                                            <i class="fas fa-box text-muted"></i>
+    @if (Model.Items.Any())
+    {
+        <div class="glass-card p-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col" class="ps-4">Product</th>
+                            <th scope="col">Price</th>
+                            <th scope="col">Quantity</th>
+                            <th scope="col">Total</th>
+                            <th scope="col" class="text-center pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                        {
+                                            <img src="@item.ImageUrl" class="rounded me-3"
+                                                 style="width: 60px; height: 60px; object-fit: cover;"
+                                                 alt="@item.ProductName">
+                                        }
+                                        else
+                                        {
+                                            <div class="rounded me-3 bg-light d-flex align-items-center justify-content-center"
+                                                 style="width: 60px; height: 60px;">
+                                                <i class="fas fa-box text-muted"></i>
+                                            </div>
+                                        }
+                                        <div>
+                                            <h6 class="mb-1 fw-bold">@item.ProductName</h6>
+                                            <p class="text-muted mb-0 small">@item.ProductDescription.Truncate(100)</p>
                                         </div>
-                                    }
-                                    <div>
-                                        <div class="fw-semibold">@firstOrderItem?.ProductName</div>
-                                        <small class="text-muted">@truncatedProductId</small>
                                     </div>
-                                </div>
-                            </td>
-                            <td>@order.OrderedAt.ToString("MMM dd, yyyy HH:mm")</td>
-                            <td>
-                                <span class="badge bg-secondary fs-6">@order.OrderItems?.Sum(oi => oi.Quantity)</span>
-                            </td>
-                            <td>
-                                <span class="fw-semibold">R @firstOrderItem?.UnitPrice</span>
-                            </td>
-                            <td>
-                                <span class="fw-bold text-success">R @order.TotalAmount</span>
-                            </td>
-                            <td>
-                                <span class="badge @GetStatusBadgeClass(order.OrderStatus) px-3 py-2 fs-6">
-                                    <i class="@GetStatusIcon(order.OrderStatus) me-1"></i>
-                                    @order.OrderStatus
-                                </span>
-                            </td>
-                            <td class="text-center pe-4">
-                                <div class="btn-group" role="group">
-                                    @if (order.OrderStatus == "Pending")
-                                    {
-                                        <form method="post" action="@Url.Action("ProcessOrder")" class="d-inline">
-                                            <input type="hidden" name="orderId" value="@order.Id" />
-                                            <button type="submit" class="btn btn-success btn-sm" title="Process Order">
-                                                <i class="fas fa-cog"></i>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold">R @item.Price</span>
+                                </td>
+                                <td>
+                                    <form method="post" action="@Url.Action("UpdateCart")" class="d-inline">
+                                        <input type="hidden" name="cartId" value="@item.CartId" />
+                                        <div class="input-group input-group-sm" style="width: 120px;">
+                                            <input type="number" name="quantity" value="@item.Quantity"
+                                                   min="1" max="@item.MaxQuantity" class="form-control">
+                                            <button type="submit" class="btn btn-outline-primary">
+                                                <i class="fas fa-sync-alt"></i>
                                             </button>
-                                        </form>
-                                    }
-
-                                    <!-- Status Dropdown -->
-                                    <div class="dropdown d-inline">
-                                        <button class="btn btn-info btn-sm dropdown-toggle" type="button"
-                                                data-bs-toggle="dropdown" title="Change Status">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li>
-                                                <form method="post" action="@Url.Action("UpdateOrderStatus")">
-                                                    <input type="hidden" name="orderId" value="@order.Id" />
-                                                    <input type="hidden" name="status" value="Processing" />
-                                                    <button type="submit" class="dropdown-item">
-                                                        <i class="fas fa-cog text-warning me-2"></i>Mark as Processing
-                                                    </button>
-                                                </form>
-                                            </li>
-                                            <li>
-                                                <form method="post" action="@Url.Action("UpdateOrderStatus")">
-                                                    <input type="hidden" name="orderId" value="@order.Id" />
-                                                    <input type="hidden" name="status" value="Shipped" />
-                                                    <button type="submit" class="dropdown-item">
-                                                        <i class="fas fa-shipping-fast text-info me-2"></i>Mark as Shipped
-                                                    </button>
-                                                </form>
-                                            </li>
-                                            <li>
-                                                <form method="post" action="@Url.Action("UpdateOrderStatus")">
-                                                    <input type="hidden" name="orderId" value="@order.Id" />
-                                                    <input type="hidden" name="status" value="Delivered" />
-                                                    <button type="submit" class="dropdown-item">
-                                                        <i class="fas fa-check-circle text-success me-2"></i>Mark as Delivered
-                                                    </button>
-                                                </form>
-                                            </li>
-                                            <li><hr class="dropdown-divider"></li>
-                                            <li>
-                                                <form method="post" action="@Url.Action("CancelOrder")"
-                                                      onsubmit="return confirm('Are you sure you want to cancel this order?');">
-                                                    <input type="hidden" name="orderId" value="@order.Id" />
-                                                    <button type="submit" class="dropdown-item text-danger">
-                                                        <i class="fas fa-times-circle me-2"></i>Cancel Order
-                                                    </button>
-                                                </form>
-                                            </li>
-                                        </ul>
-                                    </div>
-
-                                    <!-- Delete Button -->
-                                    <form method="post" action="@Url.Action("DeleteOrder")"
-                                          onsubmit="return confirm('Are you sure you want to delete this order? This action cannot be undone.');"
+                                        </div>
+                                    </form>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-success">R @item.TotalPrice</span>
+                                </td>
+                                <td class="text-center pe-4">
+                                    <form method="post" action="@Url.Action("RemoveFromCart")"
+                                          onsubmit="return confirm('Remove this item from cart?');"
                                           class="d-inline">
-                                        <input type="hidden" name="orderId" value="@order.Id" />
-                                        <button type="submit" class="btn btn-danger btn-sm" title="Delete Order">
+                                        <input type="hidden" name="cartId" value="@item.CartId" />
+                                        <button type="submit" class="btn btn-danger btn-sm" title="Remove Item">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
 
-    <!-- Pagination -->
-    @if (Model.TotalPages > 1)
-    {
-        <nav aria-label="Order pagination" class="mt-4">
-            <ul class="pagination justify-content-center">
-                <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
-                    <a class="page-link"
-                       href="@Url.Action("Index", new { search = Model.Search, status = Model.Status, sort = Model.Sort, page = Model.CurrentPage - 1, pageSize = Model.PageSize })">
-                        <i class="fas fa-chevron-left me-1"></i>Previous
-                    </a>
-                </li>
-
-                @for (int i = 1; i <= Model.TotalPages; i++)
-                {
-                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                        <a class="page-link"
-                           href="@Url.Action("Index", new { search = Model.Search, status = Model.Status, sort = Model.Sort, page = i, pageSize = Model.PageSize })">
-                            @i
+            <!-- Cart Summary -->
+            <div class="row mt-4">
+                <div class="col-md-8">
+                    <div class="d-flex gap-2">
+                        <form method="post" action="@Url.Action("ClearCart")"
+                              onsubmit="return confirm('Are you sure you want to clear your entire cart?');">
+                            <button type="submit" class="btn btn-outline-danger">
+                                <i class="fas fa-broom me-2"></i>Clear Cart
+                            </button>
+                        </form>
+                        <a href="@Url.Action("Index", "Product")" class="btn btn-outline-primary">
+                            <i class="fas fa-shopping-bag me-2"></i>Continue Shopping
                         </a>
-                    </li>
-                }
-
-                <li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
-                    <a class="page-link"
-                       href="@Url.Action("Index", new { search = Model.Search, status = Model.Status, sort = Model.Sort, page = Model.CurrentPage + 1, pageSize = Model.PageSize })">
-                        Next<i class="fas fa-chevron-right ms-1"></i>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    }
-
-    <!-- Summary Stats -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="glass-card p-3 text-white">
-                <div class="row text-center">
-                    <div class="col">
-                        <small class="opacity-75">Total Orders</small>
-                        <h5 class="mb-0">@Model.TotalCount</h5>
                     </div>
-                    <div class="col">
-                        <small class="opacity-75">Showing</small>
-                        <h5 class="mb-0">@Model.Orders.Count</h5>
-                    </div>
-                    <div class="col">
-                        <small class="opacity-75">Page</small>
-                        <h5 class="mb-0">@Model.CurrentPage of @Model.TotalPages</h5>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-card p-4 text-white">
+                        <h5 class="mb-3">Order Summary</h5>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Items (@Model.TotalItems):</span>
+                            <span>R @Model.GrandTotal</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Shipping:</span>
+                            <span>FREE</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Tax:</span>
+                            <span>R @(Model.GrandTotal * 0.15m)</span>
+                        </div>
+                        <hr class="my-2">
+                        <div class="d-flex justify-content-between fw-bold">
+                            <span>Total:</span>
+                            <span class="text-warning">R @(Model.GrandTotal * 1.15m)</span>
+                        </div>
+
+                        <form method="post" action="@Url.Action("Checkout")" class="mt-3">
+                            <button type="submit" class="btn btn-success w-100 py-2">
+                                <i class="fas fa-lock me-2"></i>Proceed to Checkout
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    @if (!Model.Orders.Any())
+    }
+    else
     {
         <div class="text-center py-5">
             <div class="glass-card p-5 text-white">
-                <i class="fas fa-clipboard-list fa-4x mb-3 opacity-50"></i>
-                <h3 class="text-white">No Orders Found</h3>
-                <p class="opacity-75 mb-4">@(string.IsNullOrEmpty(Model.Search) ? "No orders have been placed yet." : "No orders match your search criteria.")</p>
-                @if (!string.IsNullOrEmpty(Model.Search))
-                {
-                    <a href="@Url.Action("Index")" class="btn btn-customer">
-                        <i class="fas fa-times me-2"></i>Clear Search
-                    </a>
-                }
+                <i class="fas fa-shopping-cart fa-4x mb-3 opacity-50"></i>
+                <h3 class="text-white">Your Cart is Empty</h3>
+                <p class="opacity-75 mb-4">Start shopping to add items to your cart</p>
+                <a href="@Url.Action("Index", "Product")" class="btn btn-customer">
+                    <i class="fas fa-shopping-bag me-2"></i>Browse Products
+                </a>
             </div>
         </div>
     }
 </div>
 
-@functions {
-    private string GetStatusBadgeClass(string status) => status switch
-    {
-        "Pending" => "badge-placed",
-        "Processing" => "badge-processed",
-        "Shipped" => "bg-info",
-        "Delivered" => "bg-success",
-        "Cancelled" => "bg-danger",
-        _ => "bg-secondary"
-    };
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-update quantity when changed
+            const quantityInputs = document.querySelectorAll('input[name="quantity"]');
+            quantityInputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    this.closest('form').submit();
+                });
+            });
 
-    private string GetStatusIcon(string status) => status switch
-    {
-        "Pending" => "fas fa-clock",
-        "Processing" => "fas fa-cog",
-        "Shipped" => "fas fa-shipping-fast",
-        "Delivered" => "fas fa-check-circle",
-        "Cancelled" => "fas fa-times-circle",
-        _ => "fas fa-question"
-    };
+            // Add loading state to checkout button
+            const checkoutBtn = document.querySelector('button[type="submit"]');
+            if (checkoutBtn) {
+                checkoutBtn.addEventListener('click', function() {
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+                    this.disabled = true;
+                });
+            }
+        });
+    </script>
 }

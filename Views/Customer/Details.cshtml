@@ -1,0 +1,169 @@
+﻿@model ABCRetailers.Models.Customer
+
+@{
+    ViewData["Title"] = "Customer Details";
+}
+
+<div class="container">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb glass-card text-white px-3 py-2">
+            <li class="breadcrumb-item"><a href="/Home" class="text-white text-decoration-none">Home</a></li>
+            <li class="breadcrumb-item"><a href="/Customer" class="text-white text-decoration-none">Customers</a></li>
+            <li class="breadcrumb-item active text-white" aria-current="page">Customer Details</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="glass-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <h2 class="h3 text-white mb-1">@Model.FirstName @Model.LastName</h2>
+                        <p class="text-white opacity-75 mb-0">Customer ID: @Model.Id</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit me-1"></i>Edit
+                        </a>
+                        <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Back
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row text-white">
+                    <div class="col-md-6">
+                        <h5 class="mb-3">Personal Information</h5>
+                        <p class="mb-2"><strong>Email:</strong> @Model.User?.Email</p>
+                        <p class="mb-2"><strong>Phone:</strong> @(Model.PhoneNumber ?? "Not provided")</p>
+                        <p class="mb-2"><strong>User ID:</strong> @Model.UserId</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="mb-3">Shipping Information</h5>
+                        <p class="mb-2"><strong>Default Shipping Address:</strong></p>
+                        <p class="mb-2 opacity-75">@(Model.DefaultShippingAddress ?? "Not specified")</p>
+                    </div>
+                </div>
+
+                <!-- Customer Stats -->
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <div class="glass-card p-3 text-center text-white">
+                            <h4 class="text-warning mb-1">@Model.TotalOrders</h4>
+                            <small class="opacity-75">Total Orders</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="glass-card p-3 text-center text-white">
+                            <h4 class="text-success mb-1">R @Model.TotalSpent</h4>
+                            <small class="opacity-75">Total Spent</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="glass-card p-3 text-center text-white">
+                            <h4 class="text-info mb-1">@Model.LoyaltyPoints</h4>
+                            <small class="opacity-75">Loyalty Points</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="glass-card p-3 text-center text-white">
+                            <h4 class="mb-1">
+                                @if (Model.NewsletterSubscribed)
+                                {
+                                    <i class="fas fa-check text-success"></i>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-times text-danger"></i>
+                                }
+                            </h4>
+                            <small class="opacity-75">Newsletter</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-lg-4">
+            <div class="glass-card p-4 text-white mb-4">
+                <h5 class="mb-3">Quick Actions</h5>
+                <div class="d-grid gap-2">
+                    <a href="mailto:@Model.User?.Email" class="btn btn-primary">
+                        <i class="fas fa-envelope me-2"></i>Send Email
+                    </a>
+                    @if (!string.IsNullOrEmpty(Model.PhoneNumber))
+                    {
+                        <a href="tel:@Model.PhoneNumber" class="btn btn-info">
+                            <i class="fas fa-phone me-2"></i>Call Customer
+                        </a>
+                    }
+                    <a href="@Url.Action("Create", "Order")" class="btn btn-success">
+                        <i class="fas fa-plus me-2"></i>Create Order
+                    </a>
+                </div>
+            </div>
+
+            <!-- Customer Activity -->
+            <div class="glass-card p-4 text-white">
+                <h5 class="mb-3">Customer Activity</h5>
+                <div class="activity-timeline">
+                    @if (Model.LastOrderDate.HasValue)
+                    {
+                        <div class="activity-item">
+                            <i class="fas fa-shopping-cart text-success"></i>
+                            <div>
+                                <strong>Last Order</strong>
+                                <small>@Model.LastOrderDate.Value.ToString("MMM dd, yyyy")</small>
+                            </div>
+                        </div>
+                    }
+                    <div class="activity-item">
+                        <i class="fas fa-user-plus text-info"></i>
+                        <div>
+                            <strong>Account Created</strong>
+                            <small>@Model.CreatedAt.ToString("MMM dd, yyyy")</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .activity-timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .activity-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+    }
+
+        .activity-item i {
+            font-size: 1.2rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .activity-item div {
+            flex-grow: 1;
+        }
+
+        .activity-item strong {
+            display: block;
+            font-size: 0.9rem;
+        }
+
+        .activity-item small {
+            opacity: 0.7;
+            font-size: 0.8rem;
+        }
+</style>
